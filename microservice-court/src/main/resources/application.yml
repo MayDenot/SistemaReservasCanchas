@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: microservice-court
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: 1234
+    url: jdbc:postgresql://localhost:3306/reservas_db?createDatabaseIfNotExist=true
+
+  jpa:
+    show-sql: true
+    database: postgresql
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+  sql:
+    init:
+      mode: always
+    platform: postgres
+
+  # Configuración específica de PostgreSQL
+  postgresql:
+    options: "-c stringtype=unspecified"
+
+server:
+  port: 8085
+
+springdoc:
+  api-docs:
+    path: /api
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+  show-actuator: true
+
+# Configuración adicional para PostgreSQL
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

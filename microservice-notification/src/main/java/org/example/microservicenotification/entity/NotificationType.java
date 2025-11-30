@@ -1,0 +1,22 @@
+package org.example.microservicenotification.entity;
+
+public enum NotificationType {
+  // Reservas
+  RESERVATION_CONFIRMED,
+  RESERVATION_CANCELLED,
+  RESERVATION_REMINDER,
+
+  // Pagos
+  PAYMENT_CONFIRMED,
+  PAYMENT_FAILED,
+  PAYMENT_REFUNDED,
+
+  // Sistema
+  WELCOME_MESSAGE,
+  PASSWORD_RESET,
+  ACCOUNT_VERIFICATION,
+
+  // Club
+  CLUB_ANNOUNCEMENT,
+  MAINTENANCE_NOTICE
+}
