@@ -5,9 +5,9 @@ target/
 !**/src/test/**/target/
 application-local.yml
 *.local.yml
-
 .env
 *.env
+
 ### STS ###
 .apt_generated
 .classpath
