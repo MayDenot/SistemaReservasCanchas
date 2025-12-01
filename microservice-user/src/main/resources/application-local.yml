@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:3306/reservas_db
+    username: postgres
+    password: 1234
+
+jwt:
+  secret: "c2VjcmV0S2V5Rm9ySldUU2lnbmluZ1B1cnBvc2VzT25seTIwMjQhQCMkJV4mKigp"
+  token-validity-in-seconds: 86400
