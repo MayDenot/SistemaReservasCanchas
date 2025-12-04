@@ -1,14 +1,17 @@
 package org.example.microserviceuser.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.example.microserviceuser.entity.User;
 import org.example.microserviceuser.mapper.UserMapper;
 import org.example.microserviceuser.repository.UserRepository;
 import org.example.microserviceuser.service.dto.request.UserRequestDTO;
 import org.example.microserviceuser.service.dto.response.UserResponseDTO;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
@@ -81,11 +84,25 @@ public class UserService {
 
   @Transactional(readOnly = true)
   public User findByEmail(String email) {
-    return userRepository.findByEmail(email).orElse(null);
+    return userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado con email: " + email));
   }
 
   @Transactional(readOnly = true)
   public boolean existsByEmail(String email) {
     return userRepository.existsByEmail(email);
+  }
+
+  @Transactional(readOnly = true)
+  public boolean existsById(Long id) {
+    return userRepository.existsById(id);
+  }
+
+  @Transactional(readOnly = true)
+  public UserResponseDTO getUserBasicById(Long id) {
+    User user = userRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con id: " + id));
+
+    return UserMapper.toResponse(user);
   }
 }

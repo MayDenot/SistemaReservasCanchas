@@ -35,6 +35,7 @@
     <module>microservice-club</module>
     <module>microservice-reservation</module>
     <module>microservice-notification</module>
+    <module>common-dto</module>
   </modules>
   <properties>
     <java.version>21</java.version>
@@ -44,6 +45,11 @@
       <groupId>org.springdoc</groupId>
       <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
       <version>2.2.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 

@@ -1,49 +1,35 @@
 spring:
-  application:
-    name: microservice-club
-
-  datasource:
-    driver-class-name: org.postgresql.Driver
-    username: postgres
-    password: 1234
-    url: jdbc:postgresql://localhost:3306/reservas_db?createDatabaseIfNotExist=true
-
-  jpa:
-    show-sql: true
-    database: postgresql
-    hibernate:
-      ddl-auto: update
-    properties:
+  name: microservice-club
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+    datasource:
+      driver-class-name: org.postgresql.Driver
+      username: ${DB_USERNAME:postgres}
+      password: ${DB_PASSWORD:password}
+      url: ${DB_URL:jdbc:postgresql://localhost:5432/reservas_db}
+    jpa:
+      show-sql: true
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
-        jdbc:
-          lob:
-            non_contextual_creation: true
+        ddl-auto: update
+      properties:
+        hibernate:
+          dialect: org.hibernate.dialect.PostgreSQLDialect
+          format_sql: true
 
-  sql:
-    init:
-      mode: always
-    platform: postgres
-
-  # Configuración específica de PostgreSQL
-  postgresql:
-    options: "-c stringtype=unspecified"
+jwt:
+  secret: ${JWT_SECRET:defaultUnsecureKeyForDevelopmentOnlyChangeInProduction}
+  token-validity-in-seconds: ${JWT_TOKEN_VALIDITY:86400}
 
 server:
-  port: 8086
+  port: ${SERVER_PORT:8086}
 
 springdoc:
   api-docs:
     path: /api
   swagger-ui:
     path: /swagger-ui.html
-    operations-sorter: method
-    tags-sorter: alpha
-  show-actuator: true
 
-# Configuración adicional para PostgreSQL
 logging:
   level:
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.example.microserviceuser: INFO
+    org.springframework.security: DEBUG

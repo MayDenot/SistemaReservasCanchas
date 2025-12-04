@@ -7,6 +7,9 @@ import org.example.microservicecourt.service.dto.request.CourtRequestDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/courts")
 @RequiredArgsConstructor
@@ -84,6 +87,8 @@ public class CourtController {
   public ResponseEntity<?> existsByNameAndClubId(@PathVariable String name, @PathVariable Long clubId) {
     try {
       return ResponseEntity.ok(courtService.existsByNameAndClubId(name, clubId));
+    } catch (EntityNotFoundException e) {
+      return ResponseEntity.notFound().build();
     } catch (Exception e) {
       return ResponseEntity.badRequest().build();
     }
@@ -93,6 +98,43 @@ public class CourtController {
   public ResponseEntity<?> existsByNameAndIdNotAndClubId(@PathVariable String name, @PathVariable Long id, @RequestParam Long clubId) {
     try {
       return ResponseEntity.ok(courtService.existsByNameAndIdNotAndClubId(name, id, clubId));
+    } catch (EntityNotFoundException e) {
+      return ResponseEntity.notFound().build();
+    } catch (Exception e) {
+      return ResponseEntity.badRequest().build();
+    }
+  }
+
+  @GetMapping("/{courtId}/available")
+  public ResponseEntity<?> isCourtAvailable(@PathVariable Long courtId,
+                           @RequestParam LocalDateTime startTime,
+                           @RequestParam LocalDateTime endTime) {
+    try {
+      return ResponseEntity.ok(courtService.isCourtAvailable(courtId, startTime, endTime));
+    } catch (EntityNotFoundException e) {
+      return ResponseEntity.notFound().build();
+    } catch (Exception e) {
+      return ResponseEntity.badRequest().build();
+    }
+  }
+
+  @GetMapping("/club/{clubId}")
+  public ResponseEntity<?> getCourtsByClub(@PathVariable Long clubId) {
+    try {
+      return ResponseEntity.ok(courtService.getCourtsByClub(clubId));
+    } catch (EntityNotFoundException e) {
+      return ResponseEntity.notFound().build();
+    } catch (Exception e) {
+      return ResponseEntity.badRequest().build();
+    }
+  }
+
+  @GetMapping("/{id}/exists")
+  public ResponseEntity<?> courtExists(@PathVariable Long id) {
+    try {
+      return ResponseEntity.ok(courtService.existsById(id));
+    } catch (EntityNotFoundException e) {
+      return ResponseEntity.notFound().build();
     } catch (Exception e) {
       return ResponseEntity.badRequest().build();
     }

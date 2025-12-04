@@ -23,7 +23,7 @@ public class NotificationMapper {
             .build();
   }
 
-  public static NotificationResponseDTO toEntity(Notification not) {
+  public static NotificationResponseDTO toResponse(Notification not) {
     return NotificationResponseDTO.builder()
             .id(not.getId())
             .userId(not.getUserId())

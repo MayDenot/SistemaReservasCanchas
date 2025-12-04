@@ -57,4 +57,22 @@ public class UserController {
       return ResponseEntity.badRequest().build();
     }
   }
+
+  @GetMapping("/{id}/exists")
+  public ResponseEntity<?> userExists(@PathVariable Long id) {
+    try {
+      return ResponseEntity.ok(userService.existsById(id));
+    } catch (Exception e) {
+      return ResponseEntity.badRequest().build();
+    }
+  }
+
+  @GetMapping("/{id}/basic")
+  public ResponseEntity<?> getUserBasic(@PathVariable Long id) {
+    try {
+      return ResponseEntity.ok(userService.getUserBasicById(id));
+    } catch (Exception e) {
+      return ResponseEntity.badRequest().build();
+    }
+  }
 }

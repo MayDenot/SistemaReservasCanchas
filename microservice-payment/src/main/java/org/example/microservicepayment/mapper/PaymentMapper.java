@@ -18,7 +18,7 @@ public class PaymentMapper {
             .build();
   }
 
-  public static PaymentResponseDTO toEntity(Payment pay) {
+  public static PaymentResponseDTO toResponse(Payment pay) {
     return PaymentResponseDTO.builder()
             .id(pay.getId())
             .reservationId(pay.getReservationId())

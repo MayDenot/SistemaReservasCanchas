@@ -1,9 +1,9 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:3306/reservas_db
-    username: postgres
-    password: 1234
+    url: jdbc:postgresql://localhost:5432/reservas_db
+    username: root
+    password: pruebasMax
 
 jwt:
-  secret: "c2VjcmV0S2V5Rm9ySldUU2lnbmluZ1B1cnBvc2VzT25seTIwMjQhQCMkJV4mKigp"
+  secret: "9OLhxDUFSxjsBQIAvNx7zIiz4Y9JIhtinLKvbdIiAxNWFjw+PsHWGs19h4dQmmUZH4CQF0QnrgQ99H3wJoUosw=="
   token-validity-in-seconds: 86400

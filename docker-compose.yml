@@ -1,0 +1,232 @@
+services:
+  # ===== BASE DE DATOS =====
+  postgres:
+    image: postgres:15-alpine
+    container_name: reservas-postgres
+    env_file: .env
+    environment:
+      POSTGRES_MULTIPLE_DATABASES: ${POSTGRES_MULTIPLE_DATABASES}
+      POSTGRES_USER: ${POSTGRES_ROOT_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_ROOT_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_ROOT_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - reservas-network
+
+  # ===== MICROSERVICIOS =====
+
+  user-service:
+    build: ./microservice-user
+    container_name: user-service
+    env_file: .env
+    ports:
+      - "${USER_SERVICE_PORT}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${USER_DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${USER_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${USER_DB_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SERVER_PORT: 8080
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+      # Para desarrollo, puedes desactivar seguridad temporalmente
+      SECURITY_ENABLED: ${SECURITY_ENABLED:-true}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - reservas-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 2. Microservicio de Clubes
+  club-service:
+    build: ./microservice-club
+    container_name: club-service
+    env_file: .env
+    ports:
+      - "${CLUB_SERVICE_PORT}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${CLUB_DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${CLUB_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${CLUB_DB_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      USER_SERVICE_URL: http://user-service:8080
+      SERVER_PORT: 8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+    networks:
+      - reservas-network
+    restart: unless-stopped
+
+  # 3. Microservicio de Canchas
+  court-service:
+    build: ./microservice-court
+    container_name: court-service
+    env_file: .env
+    ports:
+      - "${COURT_SERVICE_PORT}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${COURT_DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${COURT_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${COURT_DB_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      CLUB_SERVICE_URL: http://club-service:8080
+      USER_SERVICE_URL: http://user-service:8080
+      SERVER_PORT: 8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      club-service:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+    networks:
+      - reservas-network
+    restart: unless-stopped
+
+  # 4. Microservicio de Reservas
+  reservation-service:
+    build: ./microservice-reservation
+    container_name: reservation-service
+    env_file: .env
+    ports:
+      - "${RESERVATION_SERVICE_PORT}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${RESERVATION_DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${RESERVATION_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${RESERVATION_DB_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      USER_SERVICE_URL: http://user-service:8080
+      CLUB_SERVICE_URL: http://club-service:8080
+      COURT_SERVICE_URL: http://court-service:8080
+      SERVER_PORT: 8080
+      # Configuración JWT para validar tokens
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+      club-service:
+        condition: service_healthy
+      court-service:
+        condition: service_healthy
+    networks:
+      - reservas-network
+    restart: unless-stopped
+
+  # 5. Microservicio de Pagos
+  payment-service:
+    build: ./microservice-payment
+    container_name: payment-service
+    env_file: .env
+    ports:
+      - "${PAYMENT_SERVICE_PORT}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${PAYMENT_DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${PAYMENT_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${PAYMENT_DB_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      RESERVATION_SERVICE_URL: http://reservation-service:8080
+      USER_SERVICE_URL: http://user-service:8080
+      SERVER_PORT: 8080
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      reservation-service:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+    networks:
+      - reservas-network
+    restart: unless-stopped
+
+  # 6. Microservicio de Notificaciones
+  notification-service:
+    build: ./microservice-notification
+    container_name: notification-service
+    env_file: .env
+    ports:
+      - "${NOTIFICATION_SERVICE_PORT}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${NOTIFICATION_DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${NOTIFICATION_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      USER_SERVICE_URL: http://user-service:8080
+      RESERVATION_SERVICE_URL: http://reservation-service:8080
+      PAYMENT_SERVICE_URL: http://payment-service:8080
+      SERVER_PORT: 8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+    networks:
+      - reservas-network
+    restart: unless-stopped
+
+  # 7. API Gateway (Spring Cloud Gateway - opcional)
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    env_file: .env
+    ports:
+      - "${GATEWAY_PORT}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      USER_SERVICE_URL: http://user-service:8080
+      CLUB_SERVICE_URL: http://club-service:8080
+      COURT_SERVICE_URL: http://court-service:8080
+      RESERVATION_SERVICE_URL: http://reservation-service:8080
+      PAYMENT_SERVICE_URL: http://payment-service:8080
+      NOTIFICATION_SERVICE_URL: http://notification-service:8080
+      JWT_SECRET: ${JWT_SECRET}
+      SERVER_PORT: 8080
+    depends_on:
+      - user-service
+      - club-service
+      - court-service
+      - reservation-service
+      - payment-service
+      - notification-service
+    networks:
+      - reservas-network
+    restart: unless-stopped
+
+# ===== REDES Y VOLÚMENES =====
+networks:
+  reservas-network:
+    driver: bridge
+    name: reservas-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
