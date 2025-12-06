@@ -1,14 +1,12 @@
-﻿# Etapa de construcción
-FROM maven:3.8-openjdk-17 AS build
-WORKDIR /app
+﻿# Etapa 1: Build
+FROM eclipse-temurin:21-jdk AS build
+WORKDIR /build
 COPY pom.xml .
-RUN mvn dependency:go-offline
 COPY src ./src
-RUN mvn clean package -DskipTests
+RUN ./mvnw clean package -DskipTests
 
-# Etapa de ejecución
-FROM eclipse-temurin:17-jre
+# Etapa 2: Runtime
+FROM eclipse-temurin:21-jre
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+COPY --from=build /build/target/microservice-notification-*.jar app.jar
+CMD ["java", "-jar", "app.jar"]

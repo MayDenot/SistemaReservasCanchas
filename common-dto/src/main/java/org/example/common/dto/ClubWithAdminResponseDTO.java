@@ -1,7 +1,6 @@
-package org.example.microserviceclub.service.dto.response;
+package org.example.common.dto;
 
 import lombok.*;
-import org.example.microserviceclub.service.dto.UserBasicInfoDTO;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;

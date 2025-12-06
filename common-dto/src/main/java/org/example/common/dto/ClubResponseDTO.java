@@ -1,4 +1,4 @@
-package org.example.microserviceclub.service.dto.request;
+package org.example.common.dto;
 
 import lombok.*;
 
@@ -9,7 +9,8 @@ import java.time.LocalTime;
 @NoArgsConstructor
 @ToString
 @Builder
-public class ClubRequestDTO {
+public class ClubResponseDTO {
+  private Long id;
   private String name;
   private String address;
   private String phone;

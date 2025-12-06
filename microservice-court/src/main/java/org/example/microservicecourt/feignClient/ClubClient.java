@@ -1,6 +1,6 @@
 package org.example.microservicecourt.feignClient;
 
-import org.example.microserviceclub.service.dto.response.ClubResponseDTO;
+import org.example.common.dto.ClubResponseDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

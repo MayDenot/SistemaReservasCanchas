@@ -1,4 +1,4 @@
-package org.example.microserviceclub.service.dto.request;
+package org.example.common.dto;
 
 import lombok.*;
 

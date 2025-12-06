@@ -1,8 +1,6 @@
 package org.example.microservicepayment.service.dto;
 
 import lombok.*;
-import org.example.microservicereservation.entity.ReservationPaymentStatus;
-import org.example.microservicereservation.entity.ReservationStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

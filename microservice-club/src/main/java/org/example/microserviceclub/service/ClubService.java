@@ -1,15 +1,14 @@
 package org.example.microserviceclub.service;
 
 import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
+import org.example.common.dto.UserBasicInfoDTO;
 import org.example.microserviceclub.entity.Club;
 import org.example.microserviceclub.feignClient.UserClient;
 import org.example.microserviceclub.mapper.ClubMapper;
 import org.example.microserviceclub.repository.ClubRepository;
-import org.example.microserviceclub.service.dto.UserBasicInfoDTO;
-import org.example.microserviceclub.service.dto.request.ClubRequestDTO;
-import org.example.microserviceclub.service.dto.response.ClubResponseDTO;
-import org.example.microserviceclub.service.dto.response.ClubWithAdminResponseDTO;
+import org.example.common.dto.ClubRequestDTO;
+import org.example.common.dto.ClubResponseDTO;
+import org.example.common.dto.ClubWithAdminResponseDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,10 +17,14 @@ import java.time.LocalTime;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class ClubService {
   private final ClubRepository clubRepository;
   private final UserClient userClient;
+
+  public ClubService(ClubRepository clubRepository, UserClient userClient ) {
+    this.clubRepository = clubRepository;
+    this.userClient = userClient;
+  }
 
   @Transactional(readOnly = true)
   public List<ClubResponseDTO> findAll() {

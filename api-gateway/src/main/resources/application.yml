@@ -1,61 +1,68 @@
+server:
+  port: 8080
+
 spring:
   application:
     name: api-gateway
   cloud:
     gateway:
       routes:
+        # User Service - auth endpoints públicos
         - id: user-service-auth
           uri: http://localhost:8081
           predicates:
-            - Path=/api/auth/login, /api/auth/register
+            - Path=/api/auth/login,/api/auth/register
 
+        # User Service - otros endpoints protegidos
         - id: user-service
           uri: http://localhost:8081
           predicates:
-            - Path=/api/users/**, /api/auth/validate
+            - Path=/api/users/**,/api/auth/validate
           filters:
-            - name: JwtAuthenticationFilter
+            - JwtAuthentication
 
+        # Club Service - protegido
         - id: club-service
           uri: http://localhost:8086
           predicates:
             - Path=/api/clubs/**
           filters:
-            - name: JwtAuthenticationFilter
+            - JwtAuthentication
 
+        # Court Service - protegido
         - id: court-service
           uri: http://localhost:8085
           predicates:
             - Path=/api/courts/**
           filters:
-            - name: JwtAuthenticationFilter
+            - JwtAuthentication
 
+        # Reservation Service - protegido
         - id: reservation-service
           uri: http://localhost:8082
           predicates:
             - Path=/api/reservations/**
           filters:
-            - name: JwtAuthenticationFilter
+            - JwtAuthentication
 
+        # Payment Service - protegido
         - id: payment-service
           uri: http://localhost:8083
           predicates:
             - Path=/api/payments/**
           filters:
-            - name: JwtAuthenticationFilter
+            - JwtAuthentication
 
+        # Notification Service - protegido
         - id: notification-service
           uri: http://localhost:8084
           predicates:
             - Path=/api/notifications/**
           filters:
-            - name: JwtAuthenticationFilter
+            - JwtAuthentication
 
 jwt:
-  secret: ${JWT_SECRET:defaultSecretKey}
-
-server:
-  port: 8080
+  secret: ${JWT_SECRET:mySecretKeyThatIsAtLeast256BitsLongForHS256Algorithm}
 
 logging:
   level:

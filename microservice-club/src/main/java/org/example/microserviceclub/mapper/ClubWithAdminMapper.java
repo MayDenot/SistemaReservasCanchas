@@ -1,9 +1,11 @@
 package org.example.microserviceclub.mapper;
 
 import org.example.microserviceclub.entity.Club;
-import org.example.microserviceclub.service.dto.request.ClubWithAdminRequestDTO;
-import org.example.microserviceclub.service.dto.response.ClubWithAdminResponseDTO;
+import org.example.common.dto.ClubWithAdminRequestDTO;
+import org.example.common.dto.ClubWithAdminResponseDTO;
+import org.springframework.stereotype.Component;
 
+@Component
 public class ClubWithAdminMapper {
   public static Club toEntity(ClubWithAdminRequestDTO dto) {
     return Club.builder()

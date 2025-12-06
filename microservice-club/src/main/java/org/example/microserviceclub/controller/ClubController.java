@@ -1,9 +1,8 @@
 package org.example.microserviceclub.controller;
 
 import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
 import org.example.microserviceclub.service.ClubService;
-import org.example.microserviceclub.service.dto.request.ClubRequestDTO;
+import org.example.common.dto.ClubRequestDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,9 +10,12 @@ import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/clubs")
-@RequiredArgsConstructor
 public class ClubController {
   private final ClubService clubService;
+
+  public ClubController(ClubService clubService) {
+    this.clubService = clubService;
+  }
 
   @GetMapping()
   public ResponseEntity<?> findAll() {
