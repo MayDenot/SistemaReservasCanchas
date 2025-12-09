@@ -1,9 +1,0 @@
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/reservas_db
-    username: root
-    password: pruebasMax
-
-jwt:
-  secret: "9OLhxDUFSxjsBQIAvNx7zIiz4Y9JIhtinLKvbdIiAxNWFjw+PsHWGs19h4dQmmUZH4CQF0QnrgQ99H3wJoUosw=="
-  token-validity-in-seconds: 86400
