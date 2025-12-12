@@ -17,4 +17,5 @@ public class CourtResponseDTO {
   private CourtType type;
   private BigDecimal pricePerHour;
   private Boolean isActive;
+  private String clubName;
 }

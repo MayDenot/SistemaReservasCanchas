@@ -1,8 +1,7 @@
 export interface User {
     id: bigint;
     email: string;
-    firstName: string;
-    lastName: string;
+    name: string;
     phone?: string;
     role: 'USER' | 'ADMIN' | 'CLUB_OWNER';
     createdAt: string;

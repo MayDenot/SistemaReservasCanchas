@@ -1,27 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { courtService } from '../../api/services/courtService';
-import { reservationService } from '../../api/services/reservationService';
-import type { CourtResponse } from '../../api/types/court.types';
-import type { ReservationRequest } from '../../api/types/reservation.types';
+import React, {useState, useEffect} from 'react';
+import {useNavigate, useSearchParams} from 'react-router-dom';
+import {useAuth} from '../../context/AuthContext';
+import {courtService} from '../../api/services/courtService';
+import {reservationService} from '../../api/services/reservationService';
+import type {CourtResponse} from '../../api/types/court.types';
+import type {ReservationRequest} from '../../api/types/reservation.types';
 
 const CreateReservationPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, isAuthenticated } = useAuth();
+  const {user, isAuthenticated} = useAuth();
 
   const [court, setCourt] = useState<CourtResponse | null>(null);
   const [club, setClub] = useState<{ id: bigint } | null>(null);
   const [date, setDate] = useState<string>('');
-  const [startTime, setStartTime] = useState<string>('08:00');
-  const [endTime, setEndTime] = useState<string>('09:00');
+  const [startTime, setStartTime] = useState<string>('');
+  const [endTime, setEndTime] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
 
   const [loading, setLoading] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadingSlots, setLoadingSlots] = useState<boolean>(false);
 
   const courtId = searchParams.get('courtId');
   const dateParam = searchParams.get('date');
@@ -29,7 +30,7 @@ const CreateReservationPage: React.FC = () => {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate('/login', { state: { from: '/reservations/new' } });
+      navigate('/login', {state: {from: '/reservations/new'}});
       return;
     }
 
@@ -48,17 +49,45 @@ const CreateReservationPage: React.FC = () => {
   }, [court, date]);
 
   useEffect(() => {
-    if (startTimeParam) {
-      setStartTime(startTimeParam);
-      const [hours, minutes] = startTimeParam.split(':');
-      const endHour = (parseInt(hours) + 1).toString().padStart(2, '0');
-      setEndTime(`${endHour}:${minutes}`);
+    if (availableSlots.length > 0) {
+      // Si hay un horario en los parámetros y está disponible, usarlo
+      if (startTimeParam && availableSlots.includes(startTimeParam)) {
+        setStartTime(startTimeParam);
+        // Calcular hora de fin automática (1 hora después)
+        const nextHour = calculateNextHour(startTimeParam);
+        setEndTime(nextHour);
+      }
+      // Si no hay startTime seleccionado, usar el primer horario disponible
+      else if (!startTime && availableSlots.length > 0) {
+        setStartTime(availableSlots[0]);
+        const nextHour = calculateNextHour(availableSlots[0]);
+        setEndTime(nextHour);
+      }
+    }
+  }, [availableSlots, startTimeParam]);
+
+  // Calcular la siguiente hora
+  const calculateNextHour = (time: string): string => {
+    const [hours, minutes] = time.split(':').map(Number);
+    const nextHour = hours + 1;
+    if (nextHour > 22) return '23:00';
+    return `${nextHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  };
+
+  const getClubDisplayName = (court: CourtResponse): string => {
+    // Prioridad 1: clubName del backend
+    if (court.clubName && court.clubName.trim() !== '' && !court.clubName.startsWith('Club #')) {
+      return court.clubName;
     }
 
-    if (dateParam) {
-      setDate(dateParam);
+    // Prioridad 2: Si existe clubId, mostrar formato genérico
+    if (court.clubId) {
+      return `Club #${court.clubId}`;
     }
-  }, [startTimeParam, dateParam]);
+
+    // Fallback
+    return "Sin club";
+  };
 
   const loadCourtDetails = async () => {
     try {
@@ -75,7 +104,10 @@ const CreateReservationPage: React.FC = () => {
         throw new Error('La cancha no está asociada a un club válido');
       }
 
-      if (!dateParam) {
+      // Establecer fecha: usar parámetro o mañana por defecto
+      if (dateParam) {
+        setDate(dateParam);
+      } else {
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         setDate(tomorrow.toISOString().split('T')[0]);
@@ -92,16 +124,37 @@ const CreateReservationPage: React.FC = () => {
     if (!court || !date) return;
 
     try {
-      const dateObj = new Date(date);
+      setLoadingSlots(true);
+      setError(null);
+
+      const dateObj = new Date(date + 'T00:00:00');
       const slots = await courtService.getCourtAvailability(court.id, dateObj);
+
+      console.log('Available slots for', date, ':', slots);
       setAvailableSlots(slots);
 
-      if (startTimeParam && slots.includes(startTimeParam)) {
-        setStartTime(startTimeParam);
+      if (slots.length === 0) {
+        setError('No hay horarios disponibles para la fecha seleccionada');
+        setStartTime('');
+        setEndTime('');
       }
-    } catch (err) {
+
+    } catch (err: any) {
       console.error('Error loading available slots:', err);
+
+      if (err.response?.status === 403) {
+        setError('No tienes permiso para ver la disponibilidad de esta cancha');
+      } else if (err.response?.status === 404) {
+        setError('El endpoint de disponibilidad no fue encontrado');
+      } else {
+        setError('Error al cargar los horarios disponibles. Por favor, intenta de nuevo.');
+      }
+
       setAvailableSlots([]);
+      setStartTime('');
+      setEndTime('');
+    } finally {
+      setLoadingSlots(false);
     }
   };
 
@@ -110,13 +163,17 @@ const CreateReservationPage: React.FC = () => {
   };
 
   const calculateDuration = (): number => {
+    if (!startTime || !endTime) return 0;
+
     const [startHours, startMinutes] = startTime.split(':').map(Number);
     const [endHours, endMinutes] = endTime.split(':').map(Number);
 
     const startTotalMinutes = startHours * 60 + startMinutes;
     const endTotalMinutes = endHours * 60 + endMinutes;
 
-    return (endTotalMinutes - startTotalMinutes) / 60;
+    const durationMinutes = endTotalMinutes - startTotalMinutes;
+
+    return durationMinutes > 0 ? durationMinutes / 60 : 0;
   };
 
   const calculateTotalPrice = (): number => {
@@ -139,6 +196,14 @@ const CreateReservationPage: React.FC = () => {
 
       if (!date) {
         throw new Error('Selecciona una fecha');
+      }
+
+      if (!startTime) {
+        throw new Error('Selecciona una hora de inicio');
+      }
+
+      if (!endTime) {
+        throw new Error('Selecciona una hora de fin');
       }
 
       if (!isTimeSlotAvailable(startTime)) {
@@ -216,14 +281,15 @@ const CreateReservationPage: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-600 via-emerald-500 to-teal-500 px-4">
         <div className="bg-white rounded-2xl p-8 max-w-md text-center shadow-2xl">
           <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-6">
-            <span className="text-3xl">⚠️</span>
+            <span className="material-icons text-3xl text-white">error</span>
           </div>
           <h3 className="text-2xl font-bold text-gray-900 mb-3">Error al cargar la cancha</h3>
           <p className="text-gray-600 mb-8">{error}</p>
           <button
             onClick={() => navigate('/courts')}
-            className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition-colors"
+            className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
+            <span className="material-icons">arrow_back</span>
             Volver a canchas
           </button>
         </div>
@@ -235,17 +301,24 @@ const CreateReservationPage: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-600 via-emerald-500 to-teal-500 px-4">
         <div className="bg-white rounded-2xl p-8 max-w-md text-center shadow-2xl">
+          <div className="w-16 h-16 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <span className="material-icons text-2xl text-white">sports</span>
+          </div>
           <h3 className="text-2xl font-bold text-gray-900 mb-4">Cancha no encontrada o sin club asociado</h3>
           <button
             onClick={() => navigate('/courts')}
-            className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition-colors"
+            className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
+            <span className="material-icons">arrow_back</span>
             Volver a canchas
           </button>
         </div>
       </div>
     );
   }
+
+  const duration = calculateDuration();
+  const totalPrice = calculateTotalPrice();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-600 via-emerald-500 to-teal-500 py-8 px-4">
@@ -254,27 +327,34 @@ const CreateReservationPage: React.FC = () => {
         <nav className="flex items-center gap-3 text-white mb-8">
           <button
             onClick={() => navigate('/courts')}
-            className="bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white border-2 border-white/30 px-5 py-2 rounded-xl transition-all duration-300 hover:scale-105"
+            className="bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white border-2 border-white/30 px-5 py-2 rounded-xl transition-all duration-300 hover:scale-105 flex items-center gap-2"
           >
+            <span className="material-icons text-sm">sports</span>
             Canchas
           </button>
-          <span className="text-white/50">→</span>
+          <span className="material-icons text-white/50">chevron_right</span>
           <button
             onClick={() => navigate(`/courts/${court.id}`)}
-            className="bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white border-2 border-white/30 px-5 py-2 rounded-xl transition-all duration-300 hover:scale-105"
+            className="bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white border-2 border-white/30 px-5 py-2 rounded-xl transition-all duration-300 hover:scale-105 flex items-center gap-2"
           >
+            <span className="material-icons text-sm">stadium</span>
             {court.name}
           </button>
-          <span className="text-white/50">→</span>
-          <span className="font-bold">Nueva Reserva</span>
+          <span className="material-icons text-white/50">chevron_right</span>
+          <span className="font-bold flex items-center gap-2">
+            <span className="material-icons">add_circle</span>
+            Nueva Reserva
+          </span>
         </nav>
 
         <div className="bg-white rounded-3xl shadow-2xl p-8 animate-scale-in">
           <div className="text-center mb-10">
-            <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-gray-900 via-green-600 to-emerald-600 bg-clip-text text-transparent mb-4">
+            <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-gray-900 via-green-600 to-emerald-600 bg-clip-text text-transparent mb-4 flex items-center justify-center gap-3">
+              <span className="material-icons text-4xl">add_circle</span>
               Nueva Reserva
             </h1>
-            <p className="text-gray-600 text-xl">
+            <p className="text-gray-600 text-xl flex items-center justify-center gap-2">
+              <span className="material-icons">edit_calendar</span>
               Completa los detalles para reservar la cancha
             </p>
           </div>
@@ -282,31 +362,32 @@ const CreateReservationPage: React.FC = () => {
           {/* Court Summary */}
           <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-8 mb-10 border-l-4 border-green-500 shadow-lg hover:shadow-xl transition-shadow duration-500">
             <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-              <span className="text-3xl">🎾</span>
+              <span className="material-icons text-3xl text-green-600">sports</span>
               Cancha seleccionada
             </h3>
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
               <div>
                 <h4 className="text-2xl font-bold text-gray-900 mb-4">{court.name}</h4>
-                <div className="flex flex-wrap gap-4">
-                  <span className="bg-white px-4 py-2 rounded-xl shadow-sm flex items-center gap-2">
-                    <span className="text-lg">💰</span>
+                <div className="text-black flex flex-wrap gap-4">
+                  <span className="bg-gray-200 px-4 py-2 rounded-xl shadow-sm flex items-center gap-2">
+                    <span className="material-icons text-green-600">attach_money</span>
                     ${Number(court.pricePerHour).toFixed(2)}/hora
                   </span>
-                  <span className="bg-white px-4 py-2 rounded-xl shadow-sm flex items-center gap-2">
-                    <span className="text-lg">🏢</span>
+                  <span className="bg-gray-200 px-4 py-2 rounded-xl shadow-sm flex items-center gap-2">
+                    <span className="material-icons text-blue-600">category</span>
                     Tipo: {court.type}
                   </span>
-                  <span className="bg-white px-4 py-2 rounded-xl shadow-sm flex items-center gap-2">
-                    <span className="text-lg">🏛️</span>
-                    Club ID: {club.id.toString()}
+                  <span className="bg-gray-200 px-4 py-2 rounded-xl shadow-sm flex items-center gap-2">
+                    <span className="material-icons text-purple-600">business</span>
+                    Club: {getClubDisplayName(court)}
                   </span>
                 </div>
               </div>
               <button
                 onClick={() => navigate(`/courts/${court.id}`)}
-                className="bg-white border-2 border-green-500 text-green-600 hover:bg-green-50 font-bold px-8 py-3 rounded-xl transition-all duration-300 transform hover:scale-105"
+                className="bg-white border-2 border-green-500 text-green-600 hover:bg-green-500 hover:border-green-500 hover:text-white font-bold px-8 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
               >
+                <span className="material-icons">visibility</span>
                 Ver detalles
               </button>
             </div>
@@ -315,9 +396,9 @@ const CreateReservationPage: React.FC = () => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-8">
             {error && (
-              <div className="bg-gradient-to-r from-red-50 to-red-100 border-l-4 border-red-500 p-6 rounded-2xl">
+              <div className="bg-red-50 border-l-4 border-red-500 p-6 rounded-2xl">
                 <div className="flex items-center gap-4">
-                  <span className="text-red-500 text-3xl">⚠️</span>
+                  <span className="material-icons text-red-500 text-3xl">warning</span>
                   <p className="text-red-700 font-bold">{error}</p>
                 </div>
               </div>
@@ -327,7 +408,7 @@ const CreateReservationPage: React.FC = () => {
               {/* Fecha */}
               <div>
                 <label className="block text-gray-700 font-bold mb-4 flex items-center gap-3">
-                  <span className="text-2xl">📅</span>
+                  <span className="material-icons text-green-600 text-2xl">calendar_today</span>
                   Fecha
                 </label>
                 <input
@@ -343,14 +424,25 @@ const CreateReservationPage: React.FC = () => {
               {/* Hora de inicio */}
               <div>
                 <label className="block text-gray-700 font-bold mb-4 flex items-center gap-3">
-                  <span className="text-2xl">⏰</span>
+                  <span className="material-icons text-blue-600 text-2xl">schedule</span>
                   Hora de inicio
+                  {loadingSlots && (
+                    <span className="text-sm text-gray-500 ml-2">(Cargando...)</span>
+                  )}
                 </label>
                 <select
                   value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
+                  onChange={(e) => {
+                    setStartTime(e.target.value);
+                    // Auto-calcular hora de fin
+                    if (e.target.value) {
+                      const nextHour = calculateNextHour(e.target.value);
+                      setEndTime(nextHour);
+                    }
+                  }}
                   required
-                  className="w-full px-6 py-4 border-3 border-gray-200 rounded-2xl text-lg focus:outline-none focus:ring-4 focus:ring-green-200 focus:border-green-500 transition-all appearance-none bg-white"
+                  disabled={loadingSlots || availableSlots.length === 0}
+                  className="w-full px-6 py-4 border-3 border-gray-200 rounded-2xl text-lg focus:outline-none focus:ring-4 focus:ring-green-200 focus:border-green-500 transition-all appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
                   <option value="">Seleccionar hora</option>
                   {generateTimeOptions().map(time => (
@@ -364,10 +456,14 @@ const CreateReservationPage: React.FC = () => {
                     </option>
                   ))}
                 </select>
-                {availableSlots.length > 0 && (
-                  <div className="mt-3 bg-green-50 text-green-700 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2">
-                    <span>✅</span>
-                    Horarios disponibles: {availableSlots.join(', ')}
+                {availableSlots.length === 0 && date && !loadingSlots && (
+                  <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-xl mt-4">
+                    <div className="flex items-center gap-3">
+                      <span className="material-icons text-yellow-500 text-xl">info</span>
+                      <p className="text-yellow-700 text-sm font-semibold">
+                        No hay horarios disponibles para esta fecha. Selecciona otra fecha.
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -375,14 +471,15 @@ const CreateReservationPage: React.FC = () => {
               {/* Hora de fin */}
               <div>
                 <label className="block text-gray-700 font-bold mb-4 flex items-center gap-3">
-                  <span className="text-2xl">🕒</span>
+                  <span className="material-icons text-blue-600 text-2xl">access_time</span>
                   Hora de fin
                 </label>
                 <select
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
                   required
-                  className="w-full px-6 py-4 border-3 border-gray-200 rounded-2xl text-lg focus:outline-none focus:ring-4 focus:ring-green-200 focus:border-green-500 transition-all appearance-none bg-white"
+                  disabled={!startTime}
+                  className="w-full px-6 py-4 border-3 border-gray-200 rounded-2xl text-lg focus:outline-none focus:ring-4 focus:ring-green-200 focus:border-green-500 transition-all appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
                   <option value="">Seleccionar hora</option>
                   {generateTimeOptions().map(time => (
@@ -402,7 +499,7 @@ const CreateReservationPage: React.FC = () => {
             {/* Notas */}
             <div>
               <label className="block text-gray-700 font-bold mb-4 flex items-center gap-3">
-                <span className="text-2xl">📝</span>
+                <span className="material-icons text-gray-600 text-2xl">notes</span>
                 Notas (opcional)
               </label>
               <textarea
@@ -415,20 +512,39 @@ const CreateReservationPage: React.FC = () => {
             </div>
 
             {/* Price Summary */}
-            <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-3xl p-8 text-white shadow-xl">
-              <h3 className="text-2xl font-bold mb-8">Resumen de la reserva</h3>
+            <div className="bg-gradient-to-r from-green-700 to-emerald-700 rounded-3xl p-8 text-white shadow-xl">
+              <h3 className="text-2xl font-bold mb-8 flex items-center gap-3">
+                <span className="material-icons">receipt</span>
+                Resumen de la reserva
+              </h3>
               <div className="space-y-6">
                 <div className="flex justify-between items-center py-4 border-b border-white/20">
-                  <span>Duración:</span>
-                  <span className="font-bold text-xl">{calculateDuration()} horas</span>
+                  <span className="flex items-center gap-2">
+                    <span className="material-icons text-sm">hourglass_empty</span>
+                    Duración:
+                  </span>
+                  <span className="font-bold text-xl">
+                    {duration > 0
+                      ? `${duration} ${duration === 1 ? 'hora' : 'horas'}`
+                      : 'Selecciona horarios'
+                    }
+                  </span>
                 </div>
                 <div className="flex justify-between items-center py-4 border-b border-white/20">
-                  <span>Precio por hora:</span>
+                  <span className="flex items-center gap-2">
+                    <span className="material-icons text-sm">attach_money</span>
+                    Precio por hora:
+                  </span>
                   <span className="font-bold text-xl">${Number(court.pricePerHour).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center py-6 border-t border-white/30 mt-4">
-                  <span className="text-2xl">Total estimado:</span>
-                  <span className="text-4xl font-black">${calculateTotalPrice().toFixed(2)}</span>
+                  <span className="text-2xl flex items-center gap-3">
+                    <span className="material-icons">payments</span>
+                    Total estimado:
+                  </span>
+                  <span className="text-4xl font-black">
+                    {totalPrice > 0 ? `$${totalPrice.toFixed(2)}` : '$0.00'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -442,14 +558,14 @@ const CreateReservationPage: React.FC = () => {
                 className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold text-lg py-5 px-8 rounded-2xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50"
               >
                 <div className="flex items-center justify-center gap-3">
-                  <span>←</span>
+                  <span className="material-icons">arrow_back</span>
                   Cancelar
                 </div>
               </button>
               <button
                 type="submit"
-                disabled={submitting}
-                className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold text-lg py-5 px-8 rounded-2xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50"
+                disabled={submitting || !startTime || !endTime || duration <= 0}
+                className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold text-lg py-5 px-8 rounded-2xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? (
                   <div className="flex items-center justify-center gap-3">
@@ -458,7 +574,7 @@ const CreateReservationPage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="flex items-center justify-center gap-3">
-                    <span>✅</span>
+                    <span className="material-icons">check_circle</span>
                     Confirmar Reserva
                   </div>
                 )}
@@ -466,9 +582,9 @@ const CreateReservationPage: React.FC = () => {
             </div>
 
             {/* Términos */}
-            <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border-l-4 border-emerald-500 p-6 rounded-2xl">
+            <div className="bg-gray-100 border-l-4 border-emerald-500 p-6 rounded-2xl">
               <div className="flex items-start gap-4">
-                <span className="text-emerald-500 text-2xl">ℹ️</span>
+                <span className="material-icons text-emerald-500 text-2xl">info</span>
                 <p className="text-emerald-800">
                   Al confirmar la reserva, aceptas las políticas de cancelación del club.
                   Las reservas pueden cancelarse hasta 24 horas antes sin cargo.

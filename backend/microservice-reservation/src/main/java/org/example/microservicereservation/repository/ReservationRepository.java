@@ -20,6 +20,9 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                            @Param("startTime") LocalDateTime startTime,
                            @Param("endTime") LocalDateTime endTime);
 
+  @Query("SELECT r FROM Reservation r WHERE r.userEmail = :userEmail")
+  List<Reservation> findByUserEmail(@Param("userEmail") String userEmail);
+
   // Encontrar reservas por usuario
   List<Reservation> findByUserId(Long userId);
 

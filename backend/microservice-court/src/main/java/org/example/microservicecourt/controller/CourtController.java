@@ -4,9 +4,11 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.example.microservicecourt.service.CourtService;
 import org.example.microservicecourt.service.dto.request.CourtRequestDTO;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -122,16 +124,31 @@ public class CourtController {
     }
   }
 
-  @GetMapping("/{courtId}/available")
+  @GetMapping("/{courtId}/check-availability")
   public ResponseEntity<?> isCourtAvailable(@PathVariable("courtId") Long courtId,
-                           @RequestParam("startTime") LocalDateTime startTime,
-                           @RequestParam("endTiem") LocalDateTime endTime) {
+                                            @RequestParam("startTime") LocalDateTime startTime,
+                                            @RequestParam("endTime") LocalDateTime endTime) {
     try {
       return ResponseEntity.ok(courtService.isCourtAvailable(courtId, startTime, endTime));
     } catch (EntityNotFoundException e) {
       return ResponseEntity.notFound().build();
     } catch (Exception e) {
       return ResponseEntity.badRequest().build();
+    }
+  }
+
+  @GetMapping("/{courtId}/available")
+  public ResponseEntity<?> getAvailableSlots(
+          @PathVariable("courtId") Long courtId,
+          @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+    try {
+      List<String> availableSlots = courtService.getAvailableTimeSlots(courtId, date);
+      return ResponseEntity.ok(availableSlots);
+    } catch (EntityNotFoundException e) {
+      return ResponseEntity.notFound().build();
+    } catch (Exception e) {
+      e.printStackTrace();
+      return ResponseEntity.badRequest().body(e.getMessage());
     }
   }
 

@@ -16,6 +16,7 @@ public class ReservationResponseDTO {
   private Long userId;
   private Long courtId;
   private Long clubId;
+  private String userEmail;
   private LocalDateTime startTime;
   private LocalDateTime endTime;
   private ReservationStatus status;

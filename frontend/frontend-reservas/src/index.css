@@ -8,8 +8,8 @@
   font-weight: 400;
 
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color: #213547;
+  background-color: #ffffff;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -17,22 +17,81 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Colores basados en tu diseño - Tema Verde Deportivo */
+:root {
+  /* Colores primarios - Verde deportivo */
+  --color-primary: #10b981;       /* emerald-500 */
+  --color-primary-dark: #059669;  /* emerald-600 */
+  --color-primary-light: #34d399; /* emerald-400 */
+
+  /* Colores secundarios */
+  --color-secondary: #3b82f6;     /* blue-500 */
+  --color-secondary-dark: #2563eb;/* blue-600 */
+
+  /* Colores de fondo */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f8fafc;  /* slate-50 */
+  --color-bg-dark: #1e293b;       /* slate-800 */
+
+  /* Colores de texto */
+  --color-text-primary: #1e293b;  /* slate-800 */
+  --color-text-secondary: #64748b; /* slate-600 */
+  --color-text-light: #94a3b8;    /* slate-400 */
+
+  /* Colores de bordes */
+  --color-border: #e2e8f0;        /* slate-200 */
+  --color-border-dark: #cbd5e1;   /* slate-300 */
+
+  /* Colores de estado */
+  --color-success: #10b981;       /* emerald-500 */
+  --color-warning: #f59e0b;       /* amber-500 */
+  --color-error: #ef4444;         /* red-500 */
+  --color-info: #3b82f6;          /* blue-500 */
+}
+
+/* Modo oscuro (opcional, basado en prefers-color-scheme) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color: #e2e8f0;
+    background-color: #0f172a;    /* slate-900 */
+
+    --color-bg-primary: #0f172a;
+    --color-bg-secondary: #1e293b;
+    --color-text-primary: #f1f5f9;
+    --color-text-secondary: #cbd5e1;
+    --color-border: #334155;
+  }
+}
+
+/* Estilos para elementos específicos */
 a {
   font-weight: 500;
-  color: #646cff;
+  color: var(--color-primary);
   text-decoration: inherit;
+  transition: color 0.2s ease;
 }
 a:hover {
-  color: #535bf2;
+  color: var(--color-primary-dark);
 }
 
 body {
   margin: 0;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--color-text-primary);
+  font-weight: 700;
 }
 
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 button {
@@ -40,29 +99,82 @@ button {
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
   font-size: 1em;
-  font-weight: 500;
+  font-weight: 600;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: var(--color-primary);
+  color: white;
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: all 0.25s ease;
 }
 button:hover {
-  border-color: #646cff;
+  background-color: var(--color-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: 4px auto var(--color-primary-light);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+/* Clases utilitarias personalizadas */
+.bg-gradient-sport {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+}
+
+.text-gradient-sport {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.border-sport {
+  border-color: var(--color-primary);
+}
+
+.shadow-sport {
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
+}
+
+/* Estilos para cards/tarjetas */
+.card {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.5em;
+  transition: all 0.3s ease;
+}
+.card:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos para inputs */
+input, textarea, select {
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.75em 1em;
+  font-size: 1em;
+  transition: border-color 0.2s ease;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Clases para estados */
+.success {
+  color: var(--color-success);
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+.warning {
+  color: var(--color-warning);
+  background-color: rgba(245, 158, 11, 0.1);
+}
+
+.error {
+  color: var(--color-error);
+  background-color: rgba(239, 68, 68, 0.1);
 }

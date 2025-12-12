@@ -18,7 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.naming.ServiceUnavailableException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -27,19 +29,21 @@ public class CourtService {
   private final CourtRepository courtRepository;
   private final ClubClient clubClient;
   private final ReservationClient reservationClient;
+  private final CourtMapper courtMapper;
 
   @Transactional(readOnly = true)
   public List<CourtResponseDTO> findAll() {
     return this.courtRepository.findAll()
             .stream()
-            .map(CourtMapper::toResponse)
+            .map(courtMapper::toResponse) // Usar método de instancia
             .toList();
   }
 
   @Transactional(readOnly = true)
   public CourtResponseDTO findById(Long id) {
-    return CourtMapper.toResponse(this.courtRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Cancha no encontrado con id: " + id)));
+    Court court = this.courtRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Cancha no encontrado con id: " + id));
+    return courtMapper.toResponse(court); // Usar método de instancia
   }
 
   @Transactional
@@ -47,18 +51,17 @@ public class CourtService {
     Court court = courtRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Cancha no encontrada con id: " + id));
 
+    // Validación de nombre único en el mismo club
     if (courtRepository.existsByNameAndIdNotAndClubId(
             request.getName(), id, court.getClubId())) {
       throw new IllegalArgumentException("Ya existe otra cancha con el nombre: " + request.getName() + " en este club");
     }
 
-    court.setName(request.getName());
-    court.setType(request.getType());
-    court.setPricePerHour(request.getPricePerHour());
-    court.setIsActive(request.getIsActive());
+    // Usar el método updateEntity del mapper
+    court = courtMapper.updateEntity(court, request);
 
     Court updatedCourt = courtRepository.save(court);
-    return CourtMapper.toResponse(updatedCourt);
+    return courtMapper.toResponse(updatedCourt);
   }
 
   @Transactional
@@ -76,11 +79,12 @@ public class CourtService {
       throw new IllegalArgumentException("Ya existe una cancha con el nombre: " + courtRequestDTO.getName() + " en este club");
     }
 
-    Court court = CourtMapper.toEntity(courtRequestDTO);
+    // Usar el método del mapper
+    Court court = courtMapper.toEntity(courtRequestDTO);
     court.setClubId(clubId);
 
     Court savedCourt = courtRepository.save(court);
-    return CourtMapper.toResponse(savedCourt);
+    return courtMapper.toResponse(savedCourt);
   }
 
   @Transactional
@@ -106,7 +110,7 @@ public class CourtService {
   public List<CourtResponseDTO> findByClubId(Long clubId) {
     return this.courtRepository.findByClubId(clubId)
             .stream()
-            .map(CourtMapper::toResponse)
+            .map(courtMapper::toResponse) // Usar método de instancia
             .toList();
   }
 
@@ -114,7 +118,7 @@ public class CourtService {
   public List<CourtResponseDTO> findByClubIdAndIsActiveTrue(Long clubId) {
     return this.courtRepository.findByClubIdAndIsActiveTrue(clubId)
             .stream()
-            .map(CourtMapper::toResponse)
+            .map(courtMapper::toResponse) // Usar método de instancia
             .toList();
   }
 
@@ -154,10 +158,49 @@ public class CourtService {
   }
 
   @Transactional(readOnly = true)
+  public List<String> getAvailableTimeSlots(Long courtId, LocalDate date) {
+    Court court = courtRepository.findById(courtId)
+            .orElseThrow(() -> new EntityNotFoundException("Cancha no encontrada con id: " + courtId));
+
+    if (!court.getIsActive()) {
+      return List.of(); // Cancha no activa, sin horarios disponibles
+    }
+
+    List<String> availableSlots = new ArrayList<>();
+
+    // Generar slots de 30 minutos desde las 8:00 hasta las 22:00
+    LocalDateTime currentSlot = date.atTime(8, 0);
+    LocalDateTime endOfDay = date.atTime(22, 0);
+
+    while (currentSlot.isBefore(endOfDay)) {
+      LocalDateTime slotEnd = currentSlot.plusMinutes(30);
+
+      try {
+        // Verificar si el slot está disponible
+        boolean isAvailable = isCourtAvailable(courtId, currentSlot, slotEnd);
+
+        if (isAvailable) {
+          // Formatear como "HH:mm"
+          String timeSlot = currentSlot.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+          availableSlots.add(timeSlot);
+        }
+      } catch (Exception e) {
+        // Si hay error verificando, asumimos que no está disponible
+        System.err.println("Error verificando slot " + currentSlot + ": " + e.getMessage());
+      }
+
+      // Avanzar al siguiente slot de 30 minutos
+      currentSlot = currentSlot.plusMinutes(30);
+    }
+
+    return availableSlots;
+  }
+
+  @Transactional(readOnly = true)
   public List<CourtResponseDTO> getCourtsByClub(Long clubId) {
     return this.courtRepository.findByClubId(clubId)
             .stream()
-            .map(CourtMapper::toResponse)
+            .map(courtMapper::toResponse) // Usar método de instancia
             .toList();
   }
 

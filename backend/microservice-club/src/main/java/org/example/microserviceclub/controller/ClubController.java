@@ -27,7 +27,7 @@ public class ClubController {
   }
 
   @GetMapping("/{id}")
-  public ResponseEntity<?> findById(@PathVariable Long id) {
+  public ResponseEntity<?> findById(@PathVariable("id") Long id) {
     try {
       return ResponseEntity.ok(clubService.findById(id));
     } catch (Exception e) {
@@ -50,7 +50,7 @@ public class ClubController {
   }
 
   @PutMapping("/{id}")
-  public ResponseEntity<?> update(@PathVariable Long id, @RequestBody ClubRequestDTO request) {
+  public ResponseEntity<?> update(@PathVariable("id") Long id, @RequestBody ClubRequestDTO request) {
     try {
       return ResponseEntity.ok(clubService.update(id, request));
     } catch (Exception e) {
@@ -59,7 +59,7 @@ public class ClubController {
   }
 
   @DeleteMapping("/{id}")
-  public ResponseEntity<?> delete(@PathVariable Long id) {
+  public ResponseEntity<?> delete(@PathVariable("id") Long id) {
     try {
       clubService.delete(id);
       return ResponseEntity.ok().build();
@@ -69,7 +69,7 @@ public class ClubController {
   }
 
   @GetMapping("/exists")
-  public ResponseEntity<?> existsByName(@RequestParam String name) {
+  public ResponseEntity<?> existsByName(@RequestParam("name") String name) {
     try {
       return ResponseEntity.ok(clubService.existsByName(name));
     } catch (Exception e) {
@@ -78,7 +78,7 @@ public class ClubController {
   }
 
   @GetMapping("/{clubId}/with-user")
-  public ResponseEntity<?> getClubWithUser(@PathVariable Long clubId) {
+  public ResponseEntity<?> getClubWithUser(@PathVariable("clubId") Long clubId) {
     try {
       return ResponseEntity.ok(clubService.getClubWithUser(clubId));
     } catch (EntityNotFoundException e) {
@@ -108,8 +108,8 @@ public class ClubController {
   }
 
   @GetMapping("/{id}/is-open")
-  public ResponseEntity<?> isClubOpen(@PathVariable Long id,
-                     @RequestParam LocalDateTime dateTime) {
+  public ResponseEntity<?> isClubOpen(@PathVariable("id") Long id,
+                     @RequestParam("dateTime") LocalDateTime dateTime) {
     try {
       return ResponseEntity.ok(clubService.isClubOpenAt(id, dateTime));
     } catch (EntityNotFoundException e) {

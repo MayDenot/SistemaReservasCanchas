@@ -4,7 +4,7 @@ import type {
     UserRequest,
     UserResponse
 } from "../types/user.types";
-import api from "../axiosConfig";
+import api from "../axiosConfig.ts";
 
 export const authService = {
     login: async (req: LoginRequest): Promise<LoginResponse> => {

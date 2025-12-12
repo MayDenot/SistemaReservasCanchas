@@ -1,5 +1,5 @@
-import api from '../axiosConfig';
 import type {CourtResponse, CourtRequest} from '../types/court.types';
+import api from "../axiosConfig.ts";
 
 export const courtService = {
     // Obtener todas las canchas
@@ -19,8 +19,11 @@ export const courtService = {
 
     // Obtener disponibilidad
     getCourtAvailability: async (courtId: bigint, date: Date): Promise<string[]> => {
+        // Formatear como YYYY-MM-DD
+        const dateStr = date.toISOString().split('T')[0];
+
         const response = await api.get(`/courts/${courtId}/available`, {
-            params: { date },
+            params: { date: dateStr }
         });
         return response.data;
     },

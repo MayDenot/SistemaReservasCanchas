@@ -26,6 +26,9 @@ public class Reservation {
   @Column(name = "court_id", nullable = false)
   private Long courtId;
 
+  @Column(name = "user_email", nullable = false)
+  private String userEmail;
+
   @Column(name = "club_id", nullable = false)
   private Long clubId;
 

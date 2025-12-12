@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDateTime;
 
-@FeignClient(name = "microservice-club", url = "http://localhost:8080")
+@FeignClient(name = "microservice-club", url = "http://club-service:8080")
 public interface ClubClient {
   @GetMapping("/{id}/exists")
   boolean clubExists(@PathVariable("id") Long id);

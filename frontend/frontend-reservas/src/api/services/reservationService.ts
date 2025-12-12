@@ -1,5 +1,5 @@
-import api from '../axiosConfig';
 import type {ReservationRequest, ReservationResponse} from '../types/reservation.types';
+import api from "../axiosConfig.ts";
 
 // Helper para convertir bigint a string para JSON
 const serializeBigInt = (data: any): any => {

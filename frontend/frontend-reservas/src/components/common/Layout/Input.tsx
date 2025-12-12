@@ -13,6 +13,7 @@ interface InputProps {
   error?: string;
   disabled?: boolean;
   autoComplete?: string;
+  iconType?: 'emoji' | 'material'; // Agregar esta prop
 }
 
 const Input: React.FC<InputProps> = ({
@@ -28,7 +29,30 @@ const Input: React.FC<InputProps> = ({
                                        error,
                                        disabled = false,
                                        autoComplete = 'off',
+                                       iconType = 'emoji' // Valor por defecto
                                      }) => {
+  // Función para renderizar el icono correctamente
+  const renderIcon = () => {
+    if (!icon) return null;
+
+    if (iconType === 'material') {
+      return (
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <span className="material-icons text-gray-400 text-lg">
+            {icon}
+          </span>
+        </div>
+      );
+    }
+
+    // Para emojis (comportamiento por defecto)
+    return (
+      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <span className="text-gray-400">{icon}</span>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full">
       {label && (
@@ -36,15 +60,11 @@ const Input: React.FC<InputProps> = ({
           htmlFor={id}
           className="text-left block text-sm font-medium text-gray-700 mb-1"
         >
-          {label}
+          {label} {required && <span className="text-red-500">*</span>}
         </label>
       )}
       <div className="relative">
-        {icon && (
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <span className="text-gray-400">{icon}</span>
-          </div>
-        )}
+        {icon && renderIcon()}
         <input
           id={id}
           type={type}
@@ -69,7 +89,10 @@ const Input: React.FC<InputProps> = ({
         />
       </div>
       {error && (
-        <p className="mt-2 text-sm text-red-600">{error}</p>
+        <p className="mt-2 text-sm text-red-600 flex items-center">
+          <span className="material-icons text-sm mr-1">error</span>
+          {error}
+        </p>
       )}
     </div>
   );

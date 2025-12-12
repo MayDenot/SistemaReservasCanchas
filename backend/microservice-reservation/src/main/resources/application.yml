@@ -20,6 +20,19 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
+# Añadir configuración de Feign
+feign:
+  client:
+    config:
+      user-service:
+        url: http://user-service:8080
+        connectTimeout: 5000
+        readTimeout: 5000
+      court-service:
+        url: http://court-service:8080
+      club-service:
+        url: http://club-service:8080
+
 jwt:
   secret: ${JWT_SECRET:defaultUnsecureKeyForDevelopmentOnlyChangeInProduction}
   token-validity-in-seconds: ${JWT_TOKEN_VALIDITY:86400}
@@ -37,3 +50,6 @@ logging:
   level:
     org.example.microserviceuser: INFO
     org.springframework.security: DEBUG
+    # Añadir logging para Feign
+    org.springframework.cloud.openfeign: DEBUG
+    feign: DEBUG

@@ -15,6 +15,8 @@ import org.example.microservicereservation.service.dto.CourtDTO;
 import org.example.microservicereservation.service.dto.ReservationConflictDTO;
 import org.example.microservicereservation.service.dto.request.ReservationRequestDTO;
 import org.example.microservicereservation.service.dto.response.ReservationResponseDTO;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -302,6 +305,51 @@ public class ReservationService {
 
     log.info("Pago aplicado a reserva {} - Monto: {}, Total pagado: {}, Método: {}",
             id, amount, newPaidAmount, paymentMethod);
+  }
+
+  @Transactional(readOnly = true)
+  public List<ReservationResponseDTO> findByUserEmail(String userEmail) {
+    log.info("🔍 [DEBUG] Iniciando findByUserEmail con email: {}", userEmail);
+
+    // 1. Verificar autenticación
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+    if (auth == null || !auth.isAuthenticated()) {
+      log.error("❌ [ERROR] Usuario no autenticado");
+      throw new SecurityException("Usuario no autenticado");
+    }
+
+    String emailFromAuth = auth.getName();
+    log.info("🔍 [DEBUG] Email del contexto: {}", emailFromAuth);
+
+    // 2. Validar que solo vea sus propias reservas
+    if (!emailFromAuth.equals(userEmail)) {
+      log.warn("⚠️ [WARN] Intento de acceso no autorizado. Email solicitado: {}, Email autenticado: {}",
+              userEmail, emailFromAuth);
+      throw new SecurityException("No tienes permiso para ver reservas de otros usuarios");
+    }
+
+    try {
+      // 3. Buscar directamente por email (SIN llamar a userClient)
+      log.info("🔍 [DEBUG] Buscando reservas por email en BD: {}", userEmail);
+
+      List<Reservation> reservas = reservationRepository.findByUserEmail(userEmail);
+      log.info("🔍 [DEBUG] Número de reservas encontradas: {}", reservas.size());
+
+      if (reservas.isEmpty()) {
+        log.info("ℹ️ [INFO] No se encontraron reservas para el email: {}", userEmail);
+        return Collections.emptyList();
+      }
+
+      // 4. Convertir a DTO
+      return reservas.stream()
+              .map(ReservationMapper::toResponse)
+              .collect(Collectors.toList());
+
+    } catch (Exception e) {
+      log.error("❌ [ERROR] Excepción en findByUserEmail: {}", e.getMessage(), e);
+      throw new RuntimeException("Error al obtener reservas del usuario: " + e.getMessage(), e);
+    }
   }
 
   // Método para mapear String a ReservationPaymentStatus

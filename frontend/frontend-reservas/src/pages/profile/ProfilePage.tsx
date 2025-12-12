@@ -22,7 +22,7 @@ const ProfilePage: React.FC = () => {
       const profileResponse: ProfileResponse = {
         id: BigInt(user.id),
         email: user.email,
-        name: `${user.firstName} ${user.lastName}`.trim(),
+        name: user.name,
         phone: user.phone || '',
         createdAt: new Date(user.createdAt),
         isActive: true
@@ -70,7 +70,7 @@ const ProfilePage: React.FC = () => {
     }
 
     const profileData: ProfileRequest = {
-      name: formData.name.trim(),
+      name: formData.name,
       phone: formData.phone,
       currentPassword: formData.currentPassword,
       newPassword: formData.newPassword || ""
@@ -125,7 +125,7 @@ const ProfilePage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-600 via-emerald-500 to-teal-500">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-sport">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-2 border-white"></div>
           <p className="mt-4 text-white text-lg">Cargando perfil...</p>
@@ -136,7 +136,7 @@ const ProfilePage: React.FC = () => {
 
   if (!profile || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-600 via-emerald-500 to-teal-500 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-sport px-4">
         <div className="bg-white rounded-2xl p-8 max-w-md text-center shadow-2xl">
           <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6">
             <span className="text-3xl">⚠️</span>
@@ -151,19 +151,19 @@ const ProfilePage: React.FC = () => {
   const userRole = getUserRole();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-600 via-emerald-500 to-teal-500 py-8 px-4">
+    <div className="min-h-screen bg-gradient-sport py-8 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="mb-10 text-white">
-          <h1 className="text-4xl md:text-5xl font-black mb-4">Mi Perfil</h1>
+          <h1 className="text-white text-4xl md:text-5xl font-black mb-4">Mi Perfil</h1>
           <p className="text-white/90 text-xl">Gestiona tu información personal y configuración</p>
         </div>
 
-        <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-8 animate-scale-in">
+        <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-8 animate-fade-in">
           {/* Profile Header */}
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8 mb-12 pb-12 border-b border-gray-100">
             <div className="flex items-start gap-8">
               <div className="relative group">
-                <div className="w-32 h-32 bg-gradient-to-br from-green-600 to-emerald-600 rounded-full flex items-center justify-center text-4xl text-white font-bold shadow-2xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                <div className="w-32 h-32 bg-gradient-sport rounded-full flex items-center justify-center text-4xl text-white font-bold shadow-2xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
                   {profile.name ? profile.name.charAt(0).toUpperCase() : 'U'}
                 </div>
               </div>
@@ -172,7 +172,7 @@ const ProfilePage: React.FC = () => {
                 <p className="text-gray-600 text-lg mb-6">{profile.email}</p>
                 <div className="flex flex-wrap gap-3">
                   <span className="bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-700 px-4 py-2 rounded-full font-bold flex items-center gap-2">
-                    <span>👤</span>
+                    <span className="material-icons text-lg">👤</span>
                     {getRoleDisplayName(userRole)}
                   </span>
                   <span className={`px-4 py-2 rounded-full font-bold flex items-center gap-2 ${profile.isActive ? 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-700' : 'bg-gradient-to-r from-red-100 to-pink-100 text-red-700'}`}>
@@ -184,16 +184,16 @@ const ProfilePage: React.FC = () => {
             </div>
             <button
               onClick={() => setEditing(!editing)}
-              className={`font-bold px-8 py-4 rounded-xl transition-all duration-300 transform hover:scale-105 ${editing ? 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white' : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white'}`}
+              className={`font-bold px-8 py-4 rounded-xl transition-all duration-300 transform hover:scale-105 ${editing ? 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white' : 'bg-gradient-sport hover:from-green-700 hover:to-emerald-700 text-white'}`}
             >
               {editing ? (
                 <div className="flex items-center gap-3">
-                  <span>✕</span>
+                  <span className="material-icons">close</span>
                   Cancelar
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
-                  <span>✏️</span>
+                  <span className="material-icons">edit</span>
                   Editar Perfil
                 </div>
               )}
@@ -204,24 +204,23 @@ const ProfilePage: React.FC = () => {
             <div className="mb-12">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {[
-                  { icon: '📧', label: 'Email', value: profile.email },
-                  { icon: '📱', label: 'Teléfono', value: profile.phone || 'No especificado' },
-                  { icon: '🛡️', label: 'Rol', value: getRoleDisplayName(userRole) },
-                  { icon: '📅', label: 'Miembro desde', value: formatDate(profile.createdAt) },
-                  { icon: '🆔', label: 'ID de usuario', value: profile.id.toString() },
-                  { icon: '✅', label: 'Estado', value: profile.isActive ? 'Activo' : 'Inactivo' }
+                  { icon: 'mail_outline', label: 'Email', value: profile.email },
+                  { icon: 'phone', label: 'Teléfono', value: profile.phone || 'No especificado' },
+                  { icon: 'badge', label: 'Rol', value: getRoleDisplayName(userRole) },
+                  { icon: 'calendar_today', label: 'Miembro desde', value: formatDate(profile.createdAt) },
+                  { icon: 'check_circle', label: 'Estado', value: profile.isActive ? 'Activo' : 'Inactivo' }
                 ].map((item, index) => (
                   <div
                     key={index}
-                    className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-2xl border-2 border-transparent hover:border-green-100 transition-all duration-500 hover:-translate-y-2"
+                    className="card border-2 border-transparent hover:border-sport hover:-translate-y-2"
                   >
                     <div className="flex items-center gap-4 mb-4">
                       <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center">
-                        <span className="text-2xl">{item.icon}</span>
+                        <span className="material-icons text-2xl text-blue-600">{item.icon}</span>
                       </div>
                       <div>
                         <div className="text-sm text-gray-500 font-semibold uppercase tracking-wider">{item.label}</div>
-                        <div className="text-lg font-bold text-gray-900">{item.value}</div>
+                        <div className="text-lg font-bold text-white">{item.value}</div>
                       </div>
                     </div>
                   </div>
@@ -231,17 +230,17 @@ const ProfilePage: React.FC = () => {
           ) : (
             <form onSubmit={handleSubmit} className="mb-12">
               {error && (
-                <div className="bg-gradient-to-r from-red-50 to-red-100 border-l-4 border-red-500 p-6 rounded-2xl mb-8">
+                <div className="error border-l-4 border-red-500 p-6 rounded-2xl mb-8">
                   <div className="flex items-center gap-4">
-                    <span className="text-red-500 text-3xl">⚠️</span>
+                    <span className="material-icons text-red-500 text-3xl">error</span>
                     <p className="text-red-700 font-bold">{error}</p>
                   </div>
                 </div>
               )}
               {success && (
-                <div className="bg-gradient-to-r from-green-50 to-emerald-100 border-l-4 border-green-500 p-6 rounded-2xl mb-8">
+                <div className="success border-l-4 border-green-500 p-6 rounded-2xl mb-8">
                   <div className="flex items-center gap-4">
-                    <span className="text-green-500 text-3xl">✅</span>
+                    <span className="material-icons text-green-500 text-3xl">check_circle</span>
                     <p className="text-green-700 font-bold">{success}</p>
                   </div>
                 </div>
@@ -250,7 +249,7 @@ const ProfilePage: React.FC = () => {
               {/* Información personal */}
               <div className="mb-12">
                 <h3 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-                  <span className="text-3xl">👤</span>
+                  <span className="material-icons text-3xl text-blue-600">person</span>
                   Información personal
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -283,7 +282,7 @@ const ProfilePage: React.FC = () => {
               {/* Cambiar contraseña */}
               <div className="mb-12">
                 <h3 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-                  <span className="text-3xl">🔒</span>
+                  <span className="material-icons text-3xl text-blue-600">lock</span>
                   Cambiar contraseña
                 </h3>
                 <p className="text-gray-600 mb-8">
@@ -356,10 +355,10 @@ const ProfilePage: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 transform hover:scale-105"
+                  className="flex-1 bg-gradient-sport hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 transform hover:scale-105"
                 >
                   <div className="flex items-center justify-center gap-3">
-                    <span>💾</span>
+                    <span className="material-icons">save</span>
                     Guardar cambios
                   </div>
                 </button>
@@ -372,19 +371,19 @@ const ProfilePage: React.FC = () => {
             <h3 className="text-2xl font-bold text-gray-900 mb-8">Acciones rápidas</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
-                { icon: '📅', title: 'Mis Reservas', desc: 'Ver y gestionar todas tus reservas', onClick: () => window.location.href = '/reservations' },
-                ...(userRole === 'CLUB_OWNER' ? [{ icon: '🏢', title: 'Mis Clubes', desc: 'Gestionar clubes y canchas', onClick: () => window.location.href = '/clubs' }] : []),
-                ...(userRole === 'ADMIN' ? [{ icon: '⚙️', title: 'Panel de Administración', desc: 'Acceder al panel de control', onClick: () => window.location.href = '/admin' }] : []),
-                { icon: '🚪', title: 'Cerrar Sesión', desc: 'Salir de tu cuenta', onClick: logout }
+                { icon: 'event', title: 'Mis Reservas', desc: 'Ver y gestionar todas tus reservas', onClick: () => window.location.href = '/reservations' },
+                ...(userRole === 'CLUB_OWNER' ? [{ icon: 'business', title: 'Mis Clubes', desc: 'Gestionar clubes y canchas', onClick: () => window.location.href = '/clubs' }] : []),
+                ...(userRole === 'ADMIN' ? [{ icon: 'dashboard', title: 'Panel de Administración', desc: 'Acceder al panel de control', onClick: () => window.location.href = '/admin' }] : []),
+                { icon: 'logout', title: 'Cerrar Sesión', desc: 'Salir de tu cuenta', onClick: logout }
               ].map((action, index) => (
                 <button
                   key={index}
                   onClick={action.onClick}
-                  className="bg-white border-3 border-gray-200 hover:border-green-500 p-6 rounded-2xl text-left transition-all duration-500 hover:-translate-y-3 hover:shadow-xl group"
+                  className="bg-white border-3 border-gray-200 hover:border-sport p-6 rounded-2xl text-left transition-all duration-500 hover:-translate-y-3 hover:shadow-xl group"
                 >
                   <div className="flex items-center gap-4 mb-4">
                     <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                      <span className="text-2xl">{action.icon}</span>
+                      <span className="material-icons text-2xl text-green-600">{action.icon}</span>
                     </div>
                     <div>
                       <h4 className="text-lg font-bold text-gray-900">{action.title}</h4>

@@ -20,6 +20,18 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 5000
+        readTimeout: 5000
+        loggerLevel: full
+
+reservation:
+  service:
+    url: http://reservation-service:8080
+
 jwt:
   secret: ${JWT_SECRET:defaultUnsecureKeyForDevelopmentOnlyChangeInProduction}
   token-validity-in-seconds: ${JWT_TOKEN_VALIDITY:86400}

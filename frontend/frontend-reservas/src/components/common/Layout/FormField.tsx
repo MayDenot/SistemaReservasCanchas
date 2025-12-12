@@ -11,6 +11,7 @@ interface FormFieldProps {
   required?: boolean;
   icon?: string;
   error?: string;
+  iconType?: 'emoji' | 'material';
 }
 
 const FormField: React.FC<FormFieldProps> = ({
@@ -23,6 +24,7 @@ const FormField: React.FC<FormFieldProps> = ({
                                                required,
                                                icon,
                                                error,
+                                               iconType = 'material', // Cambié el valor por defecto a material
                                              }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange(e.target.value);
@@ -38,6 +40,7 @@ const FormField: React.FC<FormFieldProps> = ({
       placeholder={placeholder}
       required={required}
       icon={icon}
+      iconType={iconType} // Pasar la prop
       error={error}
     />
   );

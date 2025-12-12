@@ -74,6 +74,7 @@ const AdminDashboardPage: React.FC = () => {
           id: BigInt(1),
           clubId: BigInt(1),
           name: 'Cancha Central de Tenis',
+          clubName: "Club Prueba 1",
           type: "INDOOR",
           pricePerHour: BigInt(1500),
           isActive: true,
@@ -147,11 +148,11 @@ const AdminDashboardPage: React.FC = () => {
         <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-8 mb-8 border-l-4 border-green-500">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
             <div>
-              <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-gray-900 via-green-600 to-emerald-600 bg-clip-text text-transparent mb-4">
+              <h1 className="text-4xl md:text-5xl font-black text-gradient-sport mb-4">
                 Panel de Administración
               </h1>
               <p className="text-gray-600 text-lg">
-                Bienvenido, {user?.firstName} {user?.lastName}
+                Bienvenido, {user?.name}
               </p>
             </div>
             <div className="space-y-4">
@@ -189,7 +190,7 @@ const AdminDashboardPage: React.FC = () => {
               value: formatCurrency(stats.revenue),
               change: '+12.5% vs período anterior',
               icon: '💰',
-              color: 'from-green-500 to-emerald-500'
+              color: 'bg-gradient-sport'
             },
             {
               title: 'Usuarios',
@@ -215,12 +216,10 @@ const AdminDashboardPage: React.FC = () => {
           ].map((stat, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl shadow-xl p-8 border-2 border-transparent hover:border-green-100 transition-all duration-500 hover:-translate-y-3 relative overflow-hidden group"
+              className="card border-2 border-transparent hover:border-sport hover:-translate-y-3 relative overflow-hidden group"
             >
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r via-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
               <div className="flex items-center gap-6 mb-8">
-                <div className={`w-16 h-16 bg-gradient-to-br ${stat.color} rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-500`}>
+                <div className={`w-16 h-16 ${stat.color} rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-500`}>
                   {stat.icon}
                 </div>
                 <div>
@@ -313,7 +312,7 @@ const AdminDashboardPage: React.FC = () => {
                   Reservas recientes
                 </h3>
                 <Link to="/admin/reservations" className="text-green-600 hover:text-green-700 font-bold flex items-center gap-2 group">
-                  Ver todas
+                  Ver todos
                   <span className="group-hover:translate-x-2 transition-transform">→</span>
                 </Link>
               </div>
@@ -389,7 +388,7 @@ const AdminDashboardPage: React.FC = () => {
                   <Link
                     key={index}
                     to={action.to}
-                    className="bg-white border-2 border-gray-200 hover:border-green-500 p-6 rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg group"
+                    className="bg-white border-2 border-gray-200 hover:border-sport p-6 rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg group"
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">

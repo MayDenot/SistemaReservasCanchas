@@ -60,7 +60,6 @@ const LoginPage: React.FC = () => {
       [field]: value
     }));
 
-    // Limpiar error del campo cuando el usuario empieza a escribir
     if (fieldErrors[field]) {
       setFieldErrors(prev => ({ ...prev, [field]: '' }));
     }
@@ -70,8 +69,8 @@ const LoginPage: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-emerald-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white rounded-3xl shadow-2xl p-8 sm:p-10">
         <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-2xl flex items-center justify-center mb-6">
-            <span className="text-2xl text-white">🔐</span>
+          <div className="mx-auto h-16 w-16 bg-gradient-sport rounded-2xl flex items-center justify-center mb-6">
+            <span className="material-icons text-3xl text-white">lock</span>
           </div>
           <h2 className="text-3xl font-extrabold text-gray-900">
             Iniciar Sesión
@@ -79,10 +78,10 @@ const LoginPage: React.FC = () => {
         </div>
 
         {(formError) && (
-          <div className="bg-gradient-to-r from-red-50 to-red-100 border-l-4 border-red-500 p-4 rounded-lg">
+          <div className="error border-l-4 border-red-500 p-4 rounded-lg">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <span className="text-red-500">⚠️</span>
+                <span className="material-icons text-red-500">error</span>
               </div>
               <div className="ml-3">
                 <p className="text-sm text-red-700">{formError}</p>
@@ -101,7 +100,7 @@ const LoginPage: React.FC = () => {
               onChange={handleFieldChange('email')}
               placeholder="tu@email.com"
               required
-              icon="📧"
+              icon="mail_outline"
               error={fieldErrors.email}
             />
 
@@ -113,7 +112,7 @@ const LoginPage: React.FC = () => {
               onChange={handleFieldChange('password')}
               placeholder="••••••••"
               required
-              icon="🔒"
+              icon="lock"
               error={fieldErrors.password}
             />
           </div>
@@ -129,7 +128,7 @@ const LoginPage: React.FC = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-lg font-bold rounded-xl text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02]"
+            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-lg font-bold rounded-xl text-white bg-gradient-sport hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02]"
           >
             {isLoading ? (
               <div className="flex items-center">
@@ -137,7 +136,10 @@ const LoginPage: React.FC = () => {
                 Cargando...
               </div>
             ) : (
-              'Iniciar Sesión'
+              <div className="flex items-center">
+                <span className="material-icons mr-2">login</span>
+                Iniciar Sesión
+              </div>
             )}
           </button>
 

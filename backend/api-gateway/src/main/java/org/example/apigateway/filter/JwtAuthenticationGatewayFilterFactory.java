@@ -40,8 +40,13 @@ public class JwtAuthenticationGatewayFilterFactory
       String path = request.getPath().toString();
       HttpMethod method = request.getMethod();
 
-      // Saltar JWT para rutas públicas y OPTIONS
-      if (isPublicEndpoint(path) || method == HttpMethod.OPTIONS) {
+      // ⚠️ CRÍTICO: Saltar JWT para OPTIONS (preflight CORS)
+      if (method == HttpMethod.OPTIONS) {
+        return chain.filter(exchange);
+      }
+
+      // Saltar JWT para rutas públicas
+      if (isPublicEndpoint(path)) {
         return chain.filter(exchange);
       }
 

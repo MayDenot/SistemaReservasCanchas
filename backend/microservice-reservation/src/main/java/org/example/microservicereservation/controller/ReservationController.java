@@ -32,8 +32,22 @@ public class ReservationController {
     }
   }
 
+  @GetMapping("/my-reservations")
+  public ResponseEntity<?> getMyReservations(
+          @RequestHeader("X-User-Email") String userEmail
+  ) {
+    try {
+      return ResponseEntity.ok(reservationService.findByUserEmail(userEmail));
+    } catch (EntityNotFoundException e) {
+      return ResponseEntity.notFound().build();
+    } catch (Exception e) {
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+              .body(Map.of("error", e.getMessage()));
+    }
+  }
+
   @GetMapping("/{id}")
-  public ResponseEntity<?> findById(@PathVariable Long id) {
+  public ResponseEntity<?> findById(@PathVariable("id") Long id) {
     try {
       return ResponseEntity.ok(reservationService.findById(id));
     } catch (EntityNotFoundException e) {
@@ -55,7 +69,7 @@ public class ReservationController {
   }
 
   @PutMapping("/{id}")
-  public ResponseEntity<?> update(@PathVariable Long id, @RequestBody ReservationRequestDTO request) {
+  public ResponseEntity<?> update(@PathVariable("id") Long id, @RequestBody ReservationRequestDTO request) {
     try {
       return ResponseEntity.ok(reservationService.update(id, request));
     } catch (EntityNotFoundException e) {
@@ -66,7 +80,7 @@ public class ReservationController {
   }
 
   @DeleteMapping("/{id}")
-  public ResponseEntity<?> delete(@PathVariable Long id) {
+  public ResponseEntity<?> delete(@PathVariable("id") Long id) {
     try {
       reservationService.delete(id);
       return ResponseEntity.ok().build();
@@ -78,13 +92,13 @@ public class ReservationController {
   }
 
   @GetMapping("/{id}/exists")
-  public ResponseEntity<Boolean> existsById(@PathVariable Long id) {
+  public ResponseEntity<Boolean> existsById(@PathVariable("id") Long id) {
     return ResponseEntity.ok(reservationService.existsById(id));
   }
 
   @PatchMapping("/{id}/payment-status")
   public ResponseEntity<Void> updatePaymentStatus(
-          @PathVariable Long id,
+          @PathVariable("id") Long id,
           @RequestBody Map<String, String> request) {
     String status = request.get("paymentStatus");
     reservationService.updatePaymentStatus(id, status);
@@ -92,13 +106,13 @@ public class ReservationController {
   }
 
   @GetMapping("/{id}/pending-amount")
-  public ResponseEntity<BigDecimal> getPendingAmount(@PathVariable Long id) {
+  public ResponseEntity<BigDecimal> getPendingAmount(@PathVariable("id") Long id) {
     return ResponseEntity.ok(reservationService.getPendingAmount(id));
   }
 
   @PostMapping("/{id}/apply-payment")
   public ResponseEntity<Void> applyPayment(
-          @PathVariable Long id,
+          @PathVariable("id") Long id,
           @RequestBody Map<String, Object> request) {
     BigDecimal amount = new BigDecimal(request.get("amount").toString());
     String method = (String) request.get("paymentMethod");
@@ -111,9 +125,9 @@ public class ReservationController {
 
   @GetMapping("/conflicts")
   public ResponseEntity<?> hasReservationConflict(
-          @RequestParam Long courtId,
-          @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
-          @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
+          @RequestParam("courtId") Long courtId,
+          @RequestParam("startTime") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
+          @RequestParam("endTime") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
     try {
       boolean hasConflict = reservationService.hasReservationConflict(courtId, startTime, endTime);
       return ResponseEntity.ok(hasConflict);
@@ -127,9 +141,9 @@ public class ReservationController {
 
   @GetMapping("/conflicts/details")
   public ResponseEntity<?> getConflictingReservations(
-          @RequestParam Long courtId,
-          @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
-          @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
+          @RequestParam("courtId") Long courtId,
+          @RequestParam("startTime") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
+          @RequestParam("endTime") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
     try {
       List<ReservationConflictDTO> conflicts =
               reservationService.getConflictingReservations(courtId, startTime, endTime);

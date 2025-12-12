@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@FeignClient(name = "microservice-court", url = "http://localhost:8080")
+@FeignClient(name = "microservice-court", url = "http://court-service:8080")
 public interface CourtClient {
   // Obtener cancha por ID
   @GetMapping("/{id}")
@@ -20,7 +20,7 @@ public interface CourtClient {
   boolean courtExists(@PathVariable("id") Long id);
 
   // Verificar disponibilidad de una cancha
-  @GetMapping("/{courtId}/available")
+  @GetMapping("/{courtId}/check-availability")
   boolean isCourtAvailable(@PathVariable("courtId") Long courtId,
                            @RequestParam("startTime") LocalDateTime startTime,
                            @RequestParam("endTime") LocalDateTime endTime);

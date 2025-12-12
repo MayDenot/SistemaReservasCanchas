@@ -93,16 +93,19 @@ const RegisterPage: React.FC = () => {
       <div className="max-w-lg w-full bg-white rounded-3xl shadow-2xl overflow-hidden">
         <div className="px-8 py-10 sm:p-12">
           <div className="text-center mb-8">
+            <div className="mx-auto h-16 w-16 bg-gradient-sport rounded-2xl flex items-center justify-center mb-6">
+              <span className="material-icons text-3xl text-white">person_add</span>
+            </div>
             <h2 className="text-3xl font-extrabold text-gray-900">
               Crear cuenta nueva
             </h2>
           </div>
 
           {(error || formError) && (
-            <div className="mb-8 bg-gradient-to-r from-red-50 to-red-100 border-l-4 border-red-500 p-4 rounded-lg">
+            <div className="error border-l-4 border-red-500 p-4 rounded-lg mb-8">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <span className="text-red-500">⚠️</span>
+                  <span className="material-icons text-red-500">error</span>
                 </div>
                 <div className="ml-3">
                   <p className="text-sm text-red-700">{error || formError}</p>
@@ -120,8 +123,9 @@ const RegisterPage: React.FC = () => {
                 onChange={handleFieldChange('name')}
                 placeholder="Juan Pérez"
                 required
-                icon="👤"
+                icon="person"
                 error={fieldErrors.name}
+                iconType="material"
               />
 
               <FormField
@@ -132,8 +136,9 @@ const RegisterPage: React.FC = () => {
                 onChange={handleFieldChange('email')}
                 placeholder="tu@email.com"
                 required
-                icon="📧"
+                icon="mail_outline"
                 error={fieldErrors.email}
+                iconType="material"
               />
 
               <FormField
@@ -143,7 +148,8 @@ const RegisterPage: React.FC = () => {
                 value={formData.phone || ''}
                 onChange={handleFieldChange('phone')}
                 placeholder="+54 11 1234-5678"
-                icon="📱"
+                icon="phone"
+                iconType="material"
               />
 
               <FormField
@@ -154,8 +160,9 @@ const RegisterPage: React.FC = () => {
                 onChange={handleFieldChange('password')}
                 placeholder="Mínimo 6 caracteres"
                 required
-                icon="🔒"
+                icon="lock"
                 error={fieldErrors.password}
+                iconType="material"
               />
 
               <FormField
@@ -166,15 +173,16 @@ const RegisterPage: React.FC = () => {
                 onChange={handleConfirmPasswordChange}
                 placeholder="Repite tu contraseña"
                 required
-                icon="🔐"
+                icon="lock_reset"
                 error={fieldErrors.confirmPassword}
+                iconType="material"
               />
             </div>
 
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center py-3 px-3 border border-transparent text-lg font-bold rounded-xl text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02]"
+              className="w-full flex justify-center py-3 px-3 border border-transparent text-lg font-bold rounded-xl text-white bg-gradient-sport hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02]"
             >
               {isLoading ? (
                 <div className="flex items-center">
@@ -182,7 +190,10 @@ const RegisterPage: React.FC = () => {
                   Registrando...
                 </div>
               ) : (
-                'Crear cuenta'
+                <div className="flex items-center">
+                  <span className="material-icons mr-2">how_to_reg</span>
+                  Crear cuenta
+                </div>
               )}
             </button>
           </form>
