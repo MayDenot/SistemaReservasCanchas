@@ -20,9 +20,12 @@ import java.util.List;
 public class SecurityConfig {
 
   private final HeaderAuthenticationFilter headerAuthenticationFilter;
+  private final InternalServiceAuthenticationFilter internalServiceAuthenticationFilter;
 
-  public SecurityConfig(HeaderAuthenticationFilter headerAuthenticationFilter) {
+  public SecurityConfig(HeaderAuthenticationFilter headerAuthenticationFilter,
+                        InternalServiceAuthenticationFilter internalServiceAuthenticationFilter) {
     this.headerAuthenticationFilter = headerAuthenticationFilter;
+    this.internalServiceAuthenticationFilter = internalServiceAuthenticationFilter;
   }
 
   @Bean
@@ -31,12 +34,15 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
 
+            // IMPORTANTE: Orden de los filtros
+            .addFilterBefore(internalServiceAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(headerAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 
             .authorizeHttpRequests(authz -> authz
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .requestMatchers("/actuator/health", "/api/actuator/health").permitAll()
-                    .requestMatchers("/conflicts/**").permitAll()
+                    // Conflicts ahora requiere autenticación (usuario O servicio)
+                    .requestMatchers("/conflicts/**").authenticated()
                     .requestMatchers("/api/reservations/**").authenticated()
                     .anyRequest().authenticated()
             )

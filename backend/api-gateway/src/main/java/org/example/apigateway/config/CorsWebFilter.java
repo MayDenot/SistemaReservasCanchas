@@ -36,7 +36,9 @@ public class CorsWebFilter {
           "Content-Type",
           "Accept",
           "Origin",
-          "X-Requested-With"
+          "X-Requested-With",
+          "X-User-Email",
+          "X-User-Role"
   );
 
   private static final List<String> EXPOSED_HEADERS = Arrays.asList(
@@ -61,12 +63,8 @@ public class CorsWebFilter {
         headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
         headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
         headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, String.join(", ", ALLOWED_METHODS));
-
-
         headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, String.join(", ", ALLOWED_HEADERS));
-
         headers.set(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, String.join(", ", EXPOSED_HEADERS));
-
         headers.set(HttpHeaders.ACCESS_CONTROL_MAX_AGE, "3600");
       }
 

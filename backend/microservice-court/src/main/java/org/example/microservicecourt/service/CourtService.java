@@ -3,6 +3,8 @@ package org.example.microservicecourt.service;
 import feign.FeignException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.example.common.dto.*;
 import org.example.microservicecourt.entity.Court;
 import org.example.microservicecourt.feignClient.ClubClient;
 import org.example.microservicecourt.feignClient.ReservationClient;
@@ -11,7 +13,7 @@ import org.example.microservicecourt.repository.CourtRepository;
 import org.example.microservicecourt.service.dto.CourtAvailabilityDTO;
 import org.example.microservicecourt.service.dto.ReservationConflictDTO;
 import org.example.microservicecourt.service.dto.request.CourtRequestDTO;
-import org.example.microservicecourt.service.dto.response.CourtResponseDTO;
+import org.example.microservicecourt.service.dto.request.UpdateCourtStatusRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,8 +23,12 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CourtService {
@@ -65,7 +71,7 @@ public class CourtService {
   }
 
   @Transactional
-  public CourtResponseDTO save(Long clubId, CourtRequestDTO courtRequestDTO) {
+  public CourtResponseDTO save(Long clubId, CourtRequestDTO courtRequest) {
     try {
       boolean clubExists = clubClient.clubExists(clubId);
       if (!clubExists) {
@@ -75,12 +81,12 @@ public class CourtService {
       throw new EntityNotFoundException("Club no encontrado con id: " + clubId);
     }
 
-    if (courtRepository.existsByNameAndClubId(courtRequestDTO.getName(), clubId)) {
-      throw new IllegalArgumentException("Ya existe una cancha con el nombre: " + courtRequestDTO.getName() + " en este club");
+    if (courtRepository.existsByNameAndClubId(courtRequest.getName(), clubId)) {
+      throw new IllegalArgumentException("Ya existe una cancha con el nombre: " + courtRequest.getName() + " en este club");
     }
 
     // Usar el método del mapper
-    Court court = courtMapper.toEntity(courtRequestDTO);
+    Court court = courtMapper.toEntity(courtRequest);
     court.setClubId(clubId);
 
     Court savedCourt = courtRepository.save(court);
@@ -163,33 +169,34 @@ public class CourtService {
             .orElseThrow(() -> new EntityNotFoundException("Cancha no encontrada con id: " + courtId));
 
     if (!court.getIsActive()) {
-      return List.of(); // Cancha no activa, sin horarios disponibles
+      return List.of();
     }
 
     List<String> availableSlots = new ArrayList<>();
-
-    // Generar slots de 30 minutos desde las 8:00 hasta las 22:00
     LocalDateTime currentSlot = date.atTime(8, 0);
     LocalDateTime endOfDay = date.atTime(22, 0);
 
     while (currentSlot.isBefore(endOfDay)) {
       LocalDateTime slotEnd = currentSlot.plusMinutes(30);
 
+      // Verificar que no sea en el pasado
+      if (currentSlot.isBefore(LocalDateTime.now())) {
+        currentSlot = currentSlot.plusMinutes(30);
+        continue;
+      }
+
       try {
-        // Verificar si el slot está disponible
+        // Ahora debería funcionar con el token de servicio
         boolean isAvailable = isCourtAvailable(courtId, currentSlot, slotEnd);
 
         if (isAvailable) {
-          // Formatear como "HH:mm"
           String timeSlot = currentSlot.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
           availableSlots.add(timeSlot);
         }
       } catch (Exception e) {
-        // Si hay error verificando, asumimos que no está disponible
         System.err.println("Error verificando slot " + currentSlot + ": " + e.getMessage());
       }
 
-      // Avanzar al siguiente slot de 30 minutos
       currentSlot = currentSlot.plusMinutes(30);
     }
 
@@ -197,11 +204,12 @@ public class CourtService {
   }
 
   @Transactional(readOnly = true)
-  public List<CourtResponseDTO> getCourtsByClub(Long clubId) {
-    return this.courtRepository.findByClubId(clubId)
-            .stream()
-            .map(courtMapper::toResponse) // Usar método de instancia
-            .toList();
+  public List<CourtResponseDTO> getCourtsByIds(List<Long> ids) {
+    List<Court> courts = courtRepository.findByIdIn(ids);
+
+    return courts.stream()
+            .map(courtMapper::toResponse)
+            .collect(Collectors.toList());
   }
 
   @Transactional(readOnly = true)
@@ -253,6 +261,92 @@ public class CourtService {
     }
 
     return availability;
+  }
+
+  @Transactional(readOnly = true)
+  public CourtStatsDTO getCourtStatsByClub(Long clubId) {
+    CourtStatsDTO stats = new CourtStatsDTO();
+
+    // 1. Conteo total de canchas
+    Long totalCourts = courtRepository.countByClubId(clubId);
+    stats.setTotalCourts(totalCourts != null ? totalCourts : 0L);
+
+    // 2. Canchas activas
+    Long activeCourts = courtRepository.countByClubIdAndIsActiveTrue(clubId);
+    stats.setActiveCourts(activeCourts != null ? activeCourts : 0L);
+
+    // 3. Canchas inactivas
+    Long inactiveCourts = totalCourts - activeCourts;
+    stats.setInactiveCourts(inactiveCourts > 0 ? inactiveCourts : 0L);
+
+    // 4. Conteo por tipo
+    List<CourtTypeCount> courtTypes = getCourtTypesByClub(clubId);
+    stats.setCourtTypes(courtTypes);
+
+    // 5. Canchas más populares (necesitarías datos de reservas)
+    // Por ahora devolvemos las canchas con sus datos básicos
+    List<CourtStatsDTO.PopularCourt> popularCourts = getPopularCourtsByClub(clubId);
+    stats.setPopularCourts(popularCourts);
+
+    return stats;
+  }
+
+  @Transactional(readOnly = true)
+  public Long getCourtCountByClub(Long clubId) {
+    Long count = courtRepository.countByClubId(clubId);
+    return count != null ? count : 0L;
+  }
+
+  @Transactional
+  public CourtResponseDTO updateCourtStatus(Long courtId, UpdateCourtStatusRequest request) {
+    log.info("Actualizando estado de la cancha: {}", courtId);
+
+    Court court = courtRepository.findById(courtId)
+            .orElseThrow(() -> new RuntimeException("Cancha no encontrada con id: " + courtId));
+
+    // Actualizar estado
+    court.setIsActive(request.getIsActive());
+
+    // Si se desactiva, guardar motivo de mantenimiento
+    if (request.getMaintenanceNotes() != null) {
+      // Podrías tener un campo 'maintenanceNotes' en la entidad
+      // court.setMaintenanceNotes(request.getMaintenanceNotes());
+      log.info("Notas de mantenimiento para cancha {}: {}", courtId, request.getMaintenanceNotes());
+    }
+
+    court.setUpdatedAt(LocalDateTime.now());
+
+    Court updatedCourt = courtRepository.save(court);
+    return courtMapper.toResponse(updatedCourt);
+  }
+
+  // Métodos auxiliares
+  private List<CourtTypeCount> getCourtTypesByClub(Long clubId) {
+    List<Court> courts = courtRepository.findByClubId(clubId);
+
+    Map<CourtType, Long> typeCounts = courts.stream()
+            .collect(Collectors.groupingBy(Court::getType, Collectors.counting()));
+
+    return typeCounts.entrySet().stream()
+            .map(entry -> new CourtTypeCount(entry.getKey().name(), entry.getValue()))
+            .collect(Collectors.toList());
+  }
+
+  private List<CourtStatsDTO.PopularCourt> getPopularCourtsByClub(Long clubId) {
+    List<Court> courts = courtRepository.findByClubId(clubId);
+
+    // Por ahora, devolvemos todas las canchas ordenadas por precio (como ejemplo)
+    // En una implementación real, esto vendría del microservicio de reservas
+    return courts.stream()
+            .sorted(Comparator.comparing(Court::getPricePerHour).reversed())
+            .limit(5) // Top 5
+            .map(court -> CourtStatsDTO.PopularCourt.builder()
+                    .courtId(court.getId())
+                    .courtName(court.getName())
+                    .reservationCount(0L) // Por ahora 0, se llenaría con datos reales
+                    .totalRevenue(BigDecimal.ZERO) // Por ahora 0
+                    .build())
+            .collect(Collectors.toList());
   }
 
   private void validateAvailabilityParameters(LocalDateTime startTime, LocalDateTime endTime) {

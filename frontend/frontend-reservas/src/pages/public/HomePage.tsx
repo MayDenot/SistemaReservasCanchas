@@ -2,12 +2,12 @@ import React, {useState, useEffect} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
 import {courtService} from "../../api/services/courtService.ts";
 import type {CourtResponse} from "../../api/types/court.types.ts";
-import {useAuth} from "../../context/AuthContext.tsx";
 import Header from "../../components/common/Layout/Header.tsx";
 import Footer from "../../components/common/Layout/Footer.tsx";
+import {useUserRoles} from "../../hooks/useUserRoles.ts";
 
 const HomePage: React.FC = () => {
-  const {isAuthenticated} = useAuth();
+  const {isAuthenticated} = useUserRoles();
   const navigate = useNavigate();
   const [featuredCourts, setFeaturedCourts] = useState<CourtResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -253,7 +253,7 @@ const HomePage: React.FC = () => {
               Registra tu club y empieza a recibir reservas hoy mismo
             </p>
             <Link
-              to="/register?type=club_owner"
+              to="/become-club-admin"
               className="inline-flex items-center gap-2 bg-white text-blue-600 hover:bg-gray-100 font-bold text-base sm:text-lg px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-xl shadow-md active:scale-95"
             >
               <span className="material-icons">business</span>

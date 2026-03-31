@@ -134,5 +134,194 @@ export const clubService = {
       console.error(`Error al verificar horario del club ${clubId}:`, error);
       throw error;
     }
-  }
+  },
+
+  getClubStats: async (clubId: bigint): Promise<{
+    totalCourts: number;
+    activeCourts: number;
+    maintenanceCourts: number;
+    totalReservations: number;
+    activeReservations: number;
+    pendingReservations: number;
+    revenue: number;
+    monthlyRevenue: number;
+    weeklyRevenue: number;
+    averageRating?: number;
+    memberCount?: number;
+  }> => {
+    try {
+      const response = await api.get(`/clubs/${clubId}/stats`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error al obtener estadísticas del club ${clubId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtener club por administrador (para el dashboard)
+   */
+  getClubByAdmin: async (adminId: bigint): Promise<ClubResponse[]> => {
+    try {
+      const response = await api.get(`/clubs/admin/${adminId}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error al obtener clubes del administrador ${adminId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtener club del usuario actual (si es administrador)
+   */
+  getMyClub: async (): Promise<ClubResponse | null> => {
+    try {
+      const response = await api.get('/clubs/my-club');
+      return response.data;
+    } catch (error: any) {
+      // Verificar si el error tiene response
+      if (error?.response?.status === 404) {
+        return null;
+      }
+
+      // Para otros errores
+      console.error('Error al obtener club del usuario:', error);
+
+      // O relanza el error
+      throw error;
+    }
+  },
+
+  /**
+   * Actualizar horario del club
+   */
+  updateClubHours: async (
+    clubId: bigint,
+    openingTime: string,
+    closingTime: string,
+    daysOff?: string[] // Array de días en formato 'YYYY-MM-DD'
+  ): Promise<ClubResponse> => {
+    try {
+      const response = await api.patch(`/clubs/${clubId}/hours`, {
+        openingTime,
+        closingTime,
+        daysOff
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Error al actualizar horario del club ${clubId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtener horarios especiales del club (festivos, mantenimiento, etc.)
+   */
+  getSpecialHours: async (clubId: bigint): Promise<Array<{
+    date: string;
+    openingTime: string;
+    closingTime: string;
+    reason?: string;
+    isClosed: boolean;
+  }>> => {
+    try {
+      const response = await api.get(`/clubs/${clubId}/special-hours`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error al obtener horarios especiales del club ${clubId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Agregar horario especial al club
+   */
+  addSpecialHour: async (
+    clubId: bigint,
+    specialHour: {
+      date: string;
+      openingTime: string;
+      closingTime: string;
+      reason?: string;
+      isClosed: boolean;
+    }
+  ): Promise<void> => {
+    try {
+      await api.post(`/clubs/${clubId}/special-hours`, specialHour);
+    } catch (error) {
+      console.error(`Error al agregar horario especial al club ${clubId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Verificar disponibilidad del club en una fecha y hora específica
+   */
+  checkAvailability: async (
+    clubId: bigint,
+    dateTime: string,
+    durationHours: number = 1
+  ): Promise<{
+    isAvailable: boolean;
+    reason?: string;
+    availableCourts?: Array<{ id: bigint; name: string; type: string; }>;
+  }> => {
+    try {
+      const response = await api.get(`/clubs/${clubId}/availability`, {
+        params: { dateTime, durationHours }
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Error al verificar disponibilidad del club ${clubId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtener configuración del club
+   */
+  getClubSettings: async (clubId: bigint): Promise<{
+    bookingAdvanceDays: number;
+    maxBookingDuration: number;
+    minBookingDuration: number;
+    cancellationPolicyHours: number;
+    requireDeposit: boolean;
+    depositPercentage?: number;
+    autoConfirmReservations: boolean;
+    notificationEmail: string;
+    notificationPhone?: string;
+  }> => {
+    try {
+      const response = await api.get(`/clubs/${clubId}/settings`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error al obtener configuración del club ${clubId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Actualizar configuración del club
+   */
+  updateClubSettings: async (
+    clubId: bigint,
+    settings: {
+      bookingAdvanceDays?: number;
+      maxBookingDuration?: number;
+      minBookingDuration?: number;
+      cancellationPolicyHours?: number;
+      requireDeposit?: boolean;
+      depositPercentage?: number;
+      autoConfirmReservations?: boolean;
+      notificationEmail?: string;
+      notificationPhone?: string;
+    }
+  ): Promise<void> => {
+    try {
+      await api.put(`/clubs/${clubId}/settings`, settings);
+    } catch (error) {
+      console.error(`Error al actualizar configuración del club ${clubId}:`, error);
+      throw error;
+    }
+  },
 };

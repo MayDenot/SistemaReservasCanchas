@@ -44,4 +44,55 @@ export const courtService = {
     deleteCourt: async (id: bigint): Promise<void> => {
         await api.delete(`/courts/${id}`);
     },
+
+    getCourtsByClub: async (clubId: bigint): Promise<CourtResponse[]> => {
+        try {
+            const response = await api.get(`/courts/club/${clubId}`);
+            return response.data;
+        } catch (error) {
+            console.error(`Error al obtener canchas del club ${clubId}:`, error);
+            throw error;
+        }
+    },
+
+    /**
+     * Obtener estadísticas de canchas por club
+     */
+    getCourtStatsByClub: async (clubId: bigint): Promise<{
+        totalCourts: number;
+        activeCourts: number;
+        maintenanceCourts: number;
+        popularCourts: Array<{ id: bigint; name: string; bookingCount: number; }>;
+        courtTypes: Array<{ type: string; count: number; }>;
+    }> => {
+        try {
+            const response = await api.get(`/courts/club/${clubId}/stats`);
+            return response.data;
+        } catch (error) {
+            console.error(`Error al obtener estadísticas de canchas del club ${clubId}:`, error);
+            throw error;
+        }
+    },
+
+    /**
+     * Actualizar estado de cancha
+     */
+    updateCourtStatus: async (
+      courtId: bigint,
+      status: 'ACTIVE' | 'MAINTENANCE' | 'INACTIVE',
+      maintenanceNotes?: string,
+      estimatedRepairDate?: string
+    ): Promise<CourtResponse> => {
+        try {
+            const response = await api.patch(`/courts/${courtId}/status`, {
+                status,
+                maintenanceNotes,
+                estimatedRepairDate
+            });
+            return response.data;
+        } catch (error) {
+            console.error(`Error al actualizar estado de cancha ${courtId}:`, error);
+            throw error;
+        }
+    },
 };

@@ -2,8 +2,10 @@ package org.example.microservicecourt.controller;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.example.common.dto.CourtResponseDTO;
 import org.example.microservicecourt.service.CourtService;
 import org.example.microservicecourt.service.dto.request.CourtRequestDTO;
+import org.example.microservicecourt.service.dto.request.UpdateCourtStatusRequest;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -101,7 +103,7 @@ public class CourtController {
   }
 
   @GetMapping("/exists")
-  public ResponseEntity<?> existsByNameAndClubId(@PathVariable("name") String name, @PathVariable("clubId") Long clubId) {
+  public ResponseEntity<?> existsByNameAndClubId(@RequestParam("name") String name, @RequestParam("clubId") Long clubId) {
     try {
       return ResponseEntity.ok(courtService.existsByNameAndClubId(name, clubId));
     } catch (EntityNotFoundException e) {
@@ -112,8 +114,8 @@ public class CourtController {
   }
 
   @GetMapping("/exists-excluding")
-  public ResponseEntity<?> existsByNameAndIdNotAndClubId(@PathVariable("name") String name,
-                                                         @PathVariable("id") Long id,
+  public ResponseEntity<?> existsByNameAndIdNotAndClubId(@RequestParam("name") String name,
+                                                         @RequestParam("id") Long id,
                                                          @RequestParam("clubId") Long clubId) {
     try {
       return ResponseEntity.ok(courtService.existsByNameAndIdNotAndClubId(name, id, clubId));
@@ -153,9 +155,92 @@ public class CourtController {
   }
 
   @GetMapping("/{id}/exists")
-  public ResponseEntity<?> courtExists(@PathVariable Long id) {
+  public ResponseEntity<?> courtExists(@PathVariable("id") Long id) {
     try {
       return ResponseEntity.ok(courtService.existsById(id));
+    } catch (EntityNotFoundException e) {
+      return ResponseEntity.notFound().build();
+    } catch (Exception e) {
+      return ResponseEntity.badRequest().build();
+    }
+  }
+
+//  @GetMapping("/club/{clubId}")
+//  public ResponseEntity<?> getCourtsByClub(@PathVariable("clubId") Long clubId) {
+//    try {
+//      return ResponseEntity.ok(courtService.getCourtsByClub(clubId));
+//    } catch (EntityNotFoundException e) {
+//      return ResponseEntity.notFound().build();
+//    } catch (Exception e) {
+//      return ResponseEntity.badRequest().build();
+//    }
+//  }
+
+  @GetMapping("/batch")
+  public ResponseEntity<?> getCourtsByIds(@RequestParam("ids") List<Long> ids) {
+    try {
+      if (ids == null || ids.isEmpty()) {
+        return ResponseEntity.badRequest().build();
+      }
+
+      // Limitar el número de IDs para evitar consultas demasiado grandes
+      if (ids.size() > 100) {
+        ids = ids.subList(0, 100);
+      }
+
+      List<CourtResponseDTO> courts = courtService.getCourtsByIds(ids);
+      return ResponseEntity.ok(courts);
+    } catch (EntityNotFoundException e) {
+      return ResponseEntity.notFound().build();
+    } catch (Exception e) {
+      return ResponseEntity.badRequest().build();
+    }
+  }
+
+  @GetMapping("/{courtId}/availability")
+  public ResponseEntity<?> checkCourtAvailability(@PathVariable("courtId") Long courtId,
+                                                  @RequestParam("startTime")
+                                                  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+                                                  LocalDateTime startTime,
+                                                  @RequestParam("endTime")
+                                                  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+                                                  LocalDateTime endTime) {
+    try {
+      return ResponseEntity.ok(courtService.checkCourtAvailability(courtId, startTime, endTime));
+    } catch (EntityNotFoundException e) {
+      return ResponseEntity.notFound().build();
+    } catch (Exception e) {
+      return ResponseEntity.badRequest().build();
+    }
+  }
+
+  @GetMapping("/club/{clubId}/stats")
+  public ResponseEntity<?> getCourtStatsByClub(@PathVariable("clubId") Long clubId) {
+    try {
+      return ResponseEntity.ok(courtService.getCourtStatsByClub(clubId));
+    } catch (EntityNotFoundException e) {
+      return ResponseEntity.notFound().build();
+    } catch (Exception e) {
+      return ResponseEntity.badRequest().build();
+    }
+  }
+
+  @GetMapping("/club/{clubId}/count")
+  public ResponseEntity<?> getCourtCountByClub(@PathVariable("clubId") Long clubId) {
+    try {
+      return ResponseEntity.ok(courtService.getCourtCountByClub(clubId));
+    } catch (EntityNotFoundException e) {
+      return ResponseEntity.notFound().build();
+    } catch (Exception e) {
+      return ResponseEntity.badRequest().build();
+    }
+  }
+
+  @PatchMapping("/{courtId}/status")
+  public ResponseEntity<?> updateCourtStatus(@PathVariable("courtId") Long courtId,
+                                             @RequestBody UpdateCourtStatusRequest request) {
+    try {
+      return ResponseEntity.ok(courtService.updateCourtStatus(courtId, request));
     } catch (EntityNotFoundException e) {
       return ResponseEntity.notFound().build();
     } catch (Exception e) {

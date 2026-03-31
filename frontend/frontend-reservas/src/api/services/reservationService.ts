@@ -59,4 +59,131 @@ export const reservationService = {
     const response = await api.put(`/reservations/${id}`, data);
     return response.data;
   },
+
+  /**
+   * Obtener reservas por club (para administradores de club)
+   */
+  getReservationsByClub: async (
+    clubId: bigint,
+    filters?: {
+      status?: string;
+      startDate?: string;
+      endDate?: string;
+      courtId?: bigint;
+      limit?: number;
+    }
+  ): Promise<ReservationResponse[]> => {
+    try {
+      const response = await api.get(`/reservations/club/${clubId}`, {
+        params: serializeBigInt(filters)
+      });
+      return deserializeBigInt(response.data);
+    } catch (error) {
+      console.error(`Error al obtener reservas del club ${clubId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtener estadísticas de reservas por club
+   */
+  getReservationStatsByClub: async (
+    clubId: bigint,
+    timeRange: 'today' | 'week' | 'month' | 'year'
+  ): Promise<{
+    totalReservations: number;
+    activeReservations: number;
+    pendingReservations: number;
+    cancelledReservations: number;
+    revenue: number;
+    averageBookingValue: number;
+    mostPopularCourt: { courtId: bigint; courtName: string; count: number; };
+    peakHours: Array<{ hour: number; count: number; }>;
+  }> => {
+    try {
+      const response = await api.get(`/reservations/club/${clubId}/stats`, {
+        params: { timeRange }
+      });
+      return deserializeBigInt(response.data);
+    } catch (error) {
+      console.error(`Error al obtener estadísticas del club ${clubId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtener reservas recientes por club
+   */
+  getRecentReservationsByClub: async (
+    clubId: bigint,
+    limit: number = 10
+  ): Promise<ReservationResponse[]> => {
+    try {
+      const response = await api.get(`/reservations/club/${clubId}/recent`, {
+        params: { limit }
+      });
+      return deserializeBigInt(response.data);
+    } catch (error) {
+      console.error(`Error al obtener reservas recientes del club ${clubId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Confirmar reserva (para administradores de club)
+   */
+  confirmReservation: async (
+    reservationId: bigint,
+    adminNotes?: string
+  ): Promise<ReservationResponse> => {
+    try {
+      const response = await api.patch(`/reservations/${reservationId}/confirm`, {
+        adminNotes
+      });
+      return deserializeBigInt(response.data);
+    } catch (error) {
+      console.error(`Error al confirmar reserva ${reservationId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Rechazar reserva (para administradores de club)
+   */
+  rejectReservation: async (
+    reservationId: bigint,
+    reason?: string
+  ): Promise<ReservationResponse> => {
+    try {
+      const response = await api.patch(`/reservations/${reservationId}/reject`, {
+        reason
+      });
+      return deserializeBigInt(response.data);
+    } catch (error) {
+      console.error(`Error al rechazar reserva ${reservationId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Actualizar estado de pago de reserva
+   */
+  updatePaymentStatus: async (
+    reservationId: bigint,
+    paymentStatus: 'PENDING' | 'CONFIRMED' | 'REFUNDED' | 'FAILED',
+    paymentMethod?: string,
+    transactionId?: string
+  ): Promise<ReservationResponse> => {
+    try {
+      const response = await api.patch(`/reservations/${reservationId}/payment-status`, {
+        paymentStatus,
+        paymentMethod,
+        transactionId
+      });
+      return deserializeBigInt(response.data);
+    } catch (error) {
+      console.error(`Error al actualizar estado de pago ${reservationId}:`, error);
+      throw error;
+    }
+  },
 };

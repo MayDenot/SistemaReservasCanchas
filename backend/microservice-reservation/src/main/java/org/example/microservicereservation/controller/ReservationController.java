@@ -2,15 +2,20 @@ package org.example.microservicereservation.controller;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.example.common.dto.ReservationStatsDTO;
 import org.example.microservicereservation.service.ReservationService;
 import org.example.microservicereservation.service.dto.ReservationConflictDTO;
+import org.example.microservicereservation.service.dto.request.ConfirmReservationRequest;
+import org.example.microservicereservation.service.dto.request.RejectReservationRequest;
 import org.example.microservicereservation.service.dto.request.ReservationRequestDTO;
+import org.example.microservicereservation.service.dto.response.ReservationResponseDTO;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -153,6 +158,97 @@ public class ReservationController {
     } catch (Exception e) {
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
               .body(Map.of("error", "Error interno del servidor"));
+    }
+  }
+
+  @GetMapping("/club/{clubId}")
+  public ResponseEntity<?> getReservationsByClub(@PathVariable Long clubId,
+                                                 @RequestParam(required = false) String status,
+                                                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                                                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                                                 @RequestParam(required = false) Long courtId) {
+    try {
+      List<ReservationResponseDTO> reservations = reservationService.getReservationsByClub(
+              clubId, status, startDate, endDate, courtId);
+      return ResponseEntity.ok(reservations);
+    } catch (IllegalArgumentException e) {
+      return ResponseEntity.badRequest().body(e.getMessage());
+    } catch (Exception e) {
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+              .body(Map.of("error", "Error interno del servidor"));
+    }
+  }
+
+  @GetMapping("/club/{clubId}/stats")
+  public ResponseEntity<?> getReservationsStats(@PathVariable Long clubId,
+                                                @RequestParam(defaultValue = "month") String timeRange) {
+    try {
+      ReservationStatsDTO stats = reservationService.getReservationStats(clubId, timeRange);
+      return ResponseEntity.ok(stats);
+    } catch (IllegalArgumentException e) {
+      return ResponseEntity.badRequest().body(e.getMessage());
+    } catch (Exception e) {
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+              .body(Map.of("error", "Error interno del servidor"));
+    }
+  }
+
+  @GetMapping("/club/{clubId}/recent")
+  public ResponseEntity<?> getReservationsRecents( @PathVariable Long clubId,
+                                                   @RequestParam(defaultValue = "10") int limit) {
+    try {
+      List<ReservationResponseDTO> reservations = reservationService.getRecentReservationsByClub(clubId, limit);
+      return ResponseEntity.ok(reservations);
+    } catch (IllegalArgumentException e) {
+      return ResponseEntity.badRequest().body(e.getMessage());
+    } catch (Exception e) {
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+              .body(Map.of("error", "Error interno del servidor"));
+    }
+  }
+
+  @PatchMapping("/{id}/confirm")
+  public ResponseEntity<?> confirmReservation(@PathVariable Long id,
+                                              @RequestBody(required = false) ConfirmReservationRequest request) {
+    try {
+      ReservationResponseDTO reservation = reservationService.confirmReservation(id,
+              request != null ? request.getAdminNotes() : null);
+      return ResponseEntity.ok(reservation);
+    } catch (IllegalArgumentException e) {
+      return ResponseEntity.badRequest().body(e.getMessage());
+    } catch (Exception e) {
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+              .body(Map.of("error", "Error interno del servidor"));
+    }
+  }
+
+  @PatchMapping("/{id}/reject")
+  public ResponseEntity<?> rejectReservation(@PathVariable Long id,
+                                             @RequestBody(required = false) RejectReservationRequest request) {
+    try {
+      ReservationResponseDTO reservation = reservationService.rejectReservation(id,
+              request != null ? request.getReason() : null);
+      return ResponseEntity.ok(reservation);
+    } catch (IllegalArgumentException e) {
+      return ResponseEntity.badRequest().body(e.getMessage());
+    } catch (Exception e) {
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+              .body(Map.of("error", "Error interno del servidor"));
+    }
+  }
+
+  @GetMapping("/courts/{courtId}/availability")
+  public ResponseEntity<Boolean> isCourtAvailable(
+          @PathVariable Long courtId,
+          @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTime,
+          @RequestParam(defaultValue = "1") int durationHours) {
+
+    try {
+      boolean isAvailable = reservationService.isCourtAvailable(courtId, dateTime, durationHours);
+
+      return ResponseEntity.ok(isAvailable);
+    } catch (Exception e) {
+      return ResponseEntity.badRequest().body(false);
     }
   }
 }

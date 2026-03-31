@@ -59,11 +59,37 @@ public class Reservation {
   @Column(name = "updated_at")
   private LocalDateTime updatedAt = LocalDateTime.now();
 
+  // Campos nuevos que faltaban:
+  @Column(name = "admin_notes", length = 500)
+  private String adminNotes;
+
+  @Column(name = "cancellation_reason", length = 500)
+  private String cancellationReason;
+
+  @Column(name = "payment_method")
+  private String paymentMethod;
+
+  @Column(name = "transaction_id")
+  private String transactionId;
+
+  @Column(name = "notes", length = 1000)
+  private String notes;
+
   // Método para calcular monto pendiente
   public BigDecimal getPendingAmount() {
     if (totalAmount == null) {
       return BigDecimal.ZERO;
     }
     return totalAmount.subtract(paidAmount != null ? paidAmount : BigDecimal.ZERO);
+  }
+
+  // Método para verificar si está pagada
+  public boolean isPaid() {
+    return paymentStatus == ReservationPaymentStatus.CONFIRMED;
+  }
+
+  // Método para verificar si está confirmada
+  public boolean isConfirmed() {
+    return status == ReservationStatus.CONFIRMED;
   }
 }

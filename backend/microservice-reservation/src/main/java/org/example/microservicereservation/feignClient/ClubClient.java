@@ -10,13 +10,13 @@ import java.time.LocalDateTime;
 
 @FeignClient(name = "microservice-club", url = "http://club-service:8080")
 public interface ClubClient {
-  @GetMapping("/{id}/exists")
+  @GetMapping("/api/clubs/{id}/exists")
   boolean clubExists(@PathVariable("id") Long id);
 
-  @GetMapping("/{id}")
+  @GetMapping("/api/clubs/{id}")
   ClubDTO findById(@PathVariable("id") Long id);
 
-  @GetMapping("/{id}/is-open")
+  @GetMapping("/api/clubs/{id}/is-open")
   boolean isClubOpen(@PathVariable("id") Long id,
                      @RequestParam("dateTime") LocalDateTime dateTime);
 }

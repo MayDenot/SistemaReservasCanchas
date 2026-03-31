@@ -1,7 +1,6 @@
-package org.example.microservicecourt.service.dto.response;
+package org.example.common.dto;
 
 import lombok.*;
-import org.example.microservicecourt.entity.CourtType;
 
 import java.math.BigDecimal;
 
@@ -18,4 +17,6 @@ public class CourtResponseDTO {
   private BigDecimal pricePerHour;
   private Boolean isActive;
   private String clubName;
+  private String description;
 }
+

@@ -6,15 +6,15 @@ import AppRouter from './router/AppRouter';
 import './App.css';
 
 const App: React.FC = () => {
-    return (
-        <Router>
-            <ThemeProvider>
-                <AuthProvider>
-                    <AppRouter />
-                </AuthProvider>
-            </ThemeProvider>
-        </Router>
-    );
+  return (
+    <Router>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppRouter />
+        </AuthProvider>
+      </ThemeProvider>
+    </Router>
+  );
 };
 
 export default App;

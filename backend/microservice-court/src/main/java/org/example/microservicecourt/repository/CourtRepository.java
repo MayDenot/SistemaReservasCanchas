@@ -15,4 +15,17 @@ public interface CourtRepository extends JpaRepository<Court, Long> {
   List<Court> findByClubId(Long clubId);
   List<Court> findByClubIdAndIsActiveTrue(Long clubId);
   boolean existsByNameAndClubId(String name, Long clubId);
+  List<Court> findByIdIn(List<Long> ids);
+
+  // Contar canchas por club
+  @Query("SELECT COUNT(c) FROM Court c WHERE c.clubId = :clubId")
+  Long countByClubId(@Param("clubId") Long clubId);
+
+  // Contar canchas activas por club
+  @Query("SELECT COUNT(c) FROM Court c WHERE c.clubId = :clubId AND c.isActive = true")
+  Long countByClubIdAndIsActiveTrue(@Param("clubId") Long clubId);
+
+  // Verificar si existe cancha con mismo nombre en el mismo club
+  @Query("SELECT COUNT(c) > 0 FROM Court c WHERE c.clubId = :clubId AND LOWER(c.name) = LOWER(:name)")
+  boolean existsByClubIdAndName(@Param("clubId") Long clubId, @Param("name") String name);
 }

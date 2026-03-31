@@ -5,7 +5,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.example.common.dto.CourtType;
+
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -28,4 +31,10 @@ public class Court {
   private BigDecimal pricePerHour;
   @Column(name = "is_active")
   private Boolean isActive;
+  @Column(name = "description")
+  private String description;
+  @Column(name = "created_at")
+  private LocalDateTime createdAt = LocalDateTime.now();
+  @Column(name = "updated_at")
+  private LocalDateTime updatedAt = LocalDateTime.now();
 }

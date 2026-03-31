@@ -3,6 +3,7 @@ package org.example.microservicereservation.service;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.common.dto.ReservationStatsDTO;
 import org.example.microservicereservation.entity.Reservation;
 import org.example.microservicereservation.entity.ReservationPaymentStatus;
 import org.example.microservicereservation.entity.ReservationStatus;
@@ -23,9 +24,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
+import java.time.LocalTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -352,6 +354,188 @@ public class ReservationService {
     }
   }
 
+  @Transactional(readOnly = true)
+  public List<ReservationResponseDTO> getReservationsByClub(Long clubId, String status,
+                                                            LocalDate startDate, LocalDate endDate, Long courtId) {
+
+    LocalDateTime startDateTime = startDate != null ? startDate.atStartOfDay() : null;
+    LocalDateTime endDateTime = endDate != null ? endDate.atTime(LocalTime.MAX) : null;
+
+    List<Reservation> reservations = reservationRepository.findByClubId(
+            clubId, status, startDateTime, endDateTime, courtId);
+
+    return reservations.stream()
+            .map(ReservationMapper::toResponse)
+            .collect(Collectors.toList());
+  }
+
+  @Transactional(readOnly = true)
+  public ReservationStatsDTO getReservationStats(Long clubId, String timeRange) {
+    ReservationStatsDTO stats = new ReservationStatsDTO();
+
+    LocalDateTime startDate = calculateStartDate(timeRange);
+
+    // Total reservas en el período
+    Long totalReservations = reservationRepository.countByClubIdAndStartTimeAfter(clubId, startDate);
+    stats.setTotalReservations(totalReservations != null ? totalReservations : 0L);
+
+    // Reservas activas (CONFIRMED)
+    Long activeReservations = reservationRepository.countByClubIdAndStatusAndStartTimeAfter(
+            clubId, ReservationStatus.CONFIRMED, startDate);
+    stats.setActiveReservations(activeReservations != null ? activeReservations : 0L);
+
+    // Reservas pendientes
+    Long pendingReservations = reservationRepository.countByClubIdAndStatusAndStartTimeAfter(
+            clubId, ReservationStatus.PENDING, startDate);
+    stats.setPendingReservations(pendingReservations != null ? pendingReservations : 0L);
+
+    // Canceladas
+    Long cancelledReservations = reservationRepository.countByClubIdAndStatusAndStartTimeAfter(
+            clubId, ReservationStatus.CANCELLED, startDate);
+    stats.setCancelledReservations(cancelledReservations != null ? cancelledReservations : 0L);
+
+    // Ingresos
+    Double revenue = reservationRepository.calculateRevenueByClub(clubId, startDate);
+    stats.setRevenue(revenue != null ? revenue : 0.0);
+
+    // Valor promedio por reserva
+    Double averageBookingValue = revenue != null && totalReservations != null && totalReservations > 0
+            ? revenue / totalReservations
+            : 0.0;
+    stats.setAverageBookingValue(BigDecimal.valueOf(averageBookingValue));
+
+    // Cancha más popular - usando Feign Client para obtener nombre
+    List<Object[]> popularCourtData = reservationRepository.findMostPopularCourtByClub(clubId, startDate);
+    if (popularCourtData != null && !popularCourtData.isEmpty()) {
+      Object[] popularCourt = popularCourtData.get(0); // La primera es la más popular
+      if (popularCourt.length >= 2) {
+        ReservationStatsDTO.PopularCourt popular = new ReservationStatsDTO.PopularCourt();
+
+        // Obtener datos del array
+        Long courtId = ((Number) popularCourt[0]).longValue();
+        Long count = ((Number) popularCourt[1]).longValue();
+
+        popular.setCourtId(courtId);
+        popular.setCount(count);
+
+        // Obtener nombre de la cancha usando Feign Client
+        try {
+          CourtDTO court = courtClient.findById(courtId);
+          if (court != null) {
+            popular.setCourtName(court.getName());
+          } else {
+            popular.setCourtName("Cancha #" + courtId);
+          }
+        } catch (Exception e) {
+          log.warn("Error obteniendo nombre de cancha {}: {}", courtId, e.getMessage());
+          popular.setCourtName("Cancha #" + courtId);
+        }
+
+        stats.setMostPopularCourt(popular);
+      }
+    }
+
+    // Horas pico
+    List<Object[]> peakHours = reservationRepository.findPeakHoursByClub(clubId, startDate);
+    List<ReservationStatsDTO.PeakHour> peakHourList = peakHours.stream()
+            .map(hour -> {
+              Integer hourValue = ((Number) hour[0]).intValue();
+              Long count = ((Number) hour[1]).longValue();
+              return new ReservationStatsDTO.PeakHour(hourValue, count);
+            })
+            .collect(Collectors.toList());
+    stats.setPeakHours(peakHourList);
+
+    return stats;
+  }
+
+  public List<ReservationResponseDTO> getRecentReservationsByClub(Long clubId, int limit) {
+    List<Reservation> reservations = reservationRepository.findRecentByClubId(clubId, limit);
+
+    // Aplicar límite
+    List<Reservation> limitedReservations = reservations.stream()
+            .limit(limit)
+            .collect(Collectors.toList());
+
+    // Convertir a DTO
+    List<ReservationResponseDTO> responseDTOs = limitedReservations.stream()
+            .map(ReservationMapper::toResponse)
+            .collect(Collectors.toList());
+
+    // Enriquecer con información de canchas usando Feign Client
+    return enrichReservationsWithCourtInfo(responseDTOs);
+  }
+
+  private List<ReservationResponseDTO> enrichReservationsWithCourtInfo(List<ReservationResponseDTO> reservations) {
+    if (reservations.isEmpty()) {
+      return reservations;
+    }
+
+    // Obtener IDs únicos de canchas
+    Set<Long> courtIds = reservations.stream()
+            .map(ReservationResponseDTO::getCourtId)
+            .collect(Collectors.toSet());
+
+    try {
+      // Obtener canchas usando Feign Client
+      List<CourtDTO> courts = courtClient.getCourtsByIds(new ArrayList<>(courtIds));
+      Map<Long, CourtDTO> courtMap = courts.stream()
+              .collect(Collectors.toMap(CourtDTO::getId, court -> court));
+
+      // Enriquecer cada reserva con nombre de cancha
+      return reservations.stream()
+              .map(reservation -> {
+                CourtDTO court = courtMap.get(reservation.getCourtId());
+                if (court != null) {
+                  reservation.setCourtName(court.getName());
+                }
+                return reservation;
+              })
+              .collect(Collectors.toList());
+
+    } catch (Exception e) {
+      log.error("Error enriqueciendo reservas con información de canchas: {}", e.getMessage());
+      return reservations;
+    }
+  }
+
+  @Transactional
+  public ReservationResponseDTO confirmReservation(Long reservationId, String adminNotes) {
+    Reservation reservation = reservationRepository.findById(reservationId)
+            .orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
+
+    reservation.setStatus(ReservationStatus.CONFIRMED);
+    if (adminNotes != null) {
+      reservation.setAdminNotes(adminNotes);
+    }
+    reservation.setUpdatedAt(LocalDateTime.now());
+
+    reservation = reservationRepository.save(reservation);
+
+    // Aquí podrías agregar notificaciones al usuario
+    // notificationService.sendReservationConfirmed(reservation.getUserId(), reservation);
+
+    return ReservationMapper.toResponse(reservation);
+  }
+
+  @Transactional
+  public ReservationResponseDTO rejectReservation(Long reservationId, String reason) {
+    Reservation reservation = reservationRepository.findById(reservationId)
+            .orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
+
+    reservation.setStatus(ReservationStatus.CANCELLED);
+    reservation.setCancellationReason(reason);
+    reservation.setUpdatedAt(LocalDateTime.now());
+
+    reservation = reservationRepository.save(reservation);
+
+    // Notificar al usuario y posible reembolso
+    // notificationService.sendReservationRejected(reservation.getUserId(), reservation, reason);
+    // paymentService.refundIfPaid(reservation);
+
+    return ReservationMapper.toResponse(reservation);
+  }
+
   // Método para mapear String a ReservationPaymentStatus
   private ReservationPaymentStatus mapStringToPaymentStatus(String status) {
     if (status == null) {
@@ -376,7 +560,157 @@ public class ReservationService {
             .orElseThrow(() -> new EntityNotFoundException("Reserva no encontrada"));
 
     // Calcular si no está almacenado
+    if (reservation.getTotalAmount() != null) {
+      return reservation.getTotalAmount();
+    }
+
     return calculateReservationPriceForReservation(reservation);
+  }
+
+  @Transactional(readOnly = true)
+  public boolean isCourtAvailable(Long courtId, LocalDateTime startDateTime, int durationHours) {
+    // Calcular fecha/hora de fin
+    LocalDateTime endDateTime = startDateTime.plusHours(durationHours);
+
+    // Buscar reservas solapadas para esta cancha
+    List<Reservation> overlappingReservations = reservationRepository
+            .findOverlappingReservations(courtId, startDateTime, endDateTime);
+
+    // Verificar si hay reservas activas en ese horario
+    boolean isAvailable = overlappingReservations.isEmpty();
+
+    log.debug("Cancha {} disponible de {} a {}: {}",
+            courtId, startDateTime, endDateTime, isAvailable);
+
+    return isAvailable;
+  }
+
+  private BigDecimal calculateRevenue(Long clubId, LocalDateTime startDate) {
+    try {
+      // Obtener todas las reservas confirmadas y pagadas
+      List<Reservation> paidReservations = reservationRepository
+              .findByClubIdAndStatusAndPaymentStatusAndStartTimeAfter(
+                      clubId, ReservationStatus.CONFIRMED,
+                      ReservationPaymentStatus.CONFIRMED, startDate);
+
+      if (paidReservations.isEmpty()) {
+        return BigDecimal.ZERO;
+      }
+
+      // Obtener IDs de canchas
+      Set<Long> courtIds = paidReservations.stream()
+              .map(Reservation::getCourtId)
+              .collect(Collectors.toSet());
+
+      // Obtener precios de canchas desde el microservicio de canchas
+      Map<Long, BigDecimal> courtPrices = getCourtPrices(new ArrayList<>(courtIds));
+
+      // Calcular ingresos
+      BigDecimal totalRevenue = BigDecimal.ZERO;
+
+      for (Reservation reservation : paidReservations) {
+        BigDecimal pricePerHour = courtPrices.get(reservation.getCourtId());
+        if (pricePerHour != null && reservation.getTotalAmount() != null) {
+          totalRevenue = totalRevenue.add(reservation.getTotalAmount());
+        }
+      }
+
+      return totalRevenue;
+
+    } catch (Exception e) {
+      log.error("Error calculando ingresos para club {}: {}", clubId, e.getMessage());
+      return BigDecimal.ZERO;
+    }
+  }
+
+  private Map<Long, BigDecimal> getCourtPrices(List<Long> courtIds) {
+    try {
+      List<CourtDTO> courts = courtClient.getCourtsByIds(courtIds);
+      return courts.stream()
+              .collect(Collectors.toMap(
+                      CourtDTO::getId,
+                      CourtDTO::getPricePerHour
+              ));
+    } catch (Exception e) {
+      log.error("Error obteniendo precios de canchas: {}", e.getMessage());
+      return new HashMap<>();
+    }
+  }
+
+  private ReservationStatsDTO.PopularCourt findMostPopularCourt(Long clubId, LocalDateTime startDate) {
+    try {
+      // Obtener recuentos por cancha desde el repositorio
+      List<Object[]> courtCounts = reservationRepository
+              .findCourtReservationCountsByClub(clubId, startDate);
+
+      if (courtCounts.isEmpty()) {
+        return null;
+      }
+
+      // Obtener el primer resultado (ordenado por count descendente)
+      Object[] mostPopular = courtCounts.get(0);
+      Long courtId = (Long) mostPopular[0];
+      Long count = (Long) mostPopular[1];
+
+      // Obtener nombre de la cancha desde el microservicio
+      try {
+        CourtDTO court = courtClient.findById(courtId);
+        return ReservationStatsDTO.PopularCourt.builder()
+                .courtId(courtId)
+                .courtName(court.getName())
+                .reservationCount(count)
+                .build();
+      } catch (Exception e) {
+        return ReservationStatsDTO.PopularCourt.builder()
+                .courtId(courtId)
+                .courtName("Cancha #" + courtId)
+                .reservationCount(count)
+                .build();
+      }
+
+    } catch (Exception e) {
+      log.error("Error encontrando cancha popular: {}", e.getMessage());
+      return null;
+    }
+  }
+
+  private List<ReservationStatsDTO.PeakHour> findPeakHours(Long clubId, LocalDateTime startDate) {
+    try {
+      List<Object[]> hourCounts = reservationRepository
+              .findReservationCountsByHour(clubId, startDate);
+
+      return hourCounts.stream()
+              .map(result -> {
+                Integer hour = ((Number) result[0]).intValue();
+                Long count = ((Number) result[1]).longValue();
+                return ReservationStatsDTO.PeakHour.builder()
+                        .hour(hour)
+                        .count(count)
+                        .build();
+              })
+              .collect(Collectors.toList());
+
+    } catch (Exception e) {
+      log.error("Error obteniendo horas pico: {}", e.getMessage());
+      return new ArrayList<>();
+    }
+  }
+
+  private LocalDateTime calculateStartDate(String timeRange) {
+    LocalDateTime now = LocalDateTime.now();
+
+    switch (timeRange.toLowerCase()) {
+      case "today":
+        return now.toLocalDate().atStartOfDay();
+      case "week":
+        return now.minusWeeks(1);
+      case "month":
+        return now.minusMonths(1);
+      case "year":
+        return now.minusYears(1);
+      default:
+        return now.minusMonths(1);
+    }
   }
 
   private List<Reservation> findConflictingReservations(Long courtId,

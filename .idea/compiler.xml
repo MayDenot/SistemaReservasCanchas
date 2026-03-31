@@ -26,4 +26,15 @@
       </profile>
     </annotationProcessing>
   </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="api-gateway" options="-parameters" />
+      <module name="microservice-club" options="-parameters" />
+      <module name="microservice-court" options="-parameters" />
+      <module name="microservice-notification" options="-parameters" />
+      <module name="microservice-payment" options="-parameters" />
+      <module name="microservice-reservation" options="-parameters" />
+      <module name="microservice-user" options="-parameters" />
+    </option>
+  </component>
 </project>

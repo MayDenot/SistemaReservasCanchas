@@ -1,79 +1,74 @@
 import React from 'react';
-import {useAuth} from "../../../context/AuthContext.tsx";
+import { Link } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
+import { useUserRoles } from '../../../hooks/useUserRoles';
+import UserMenu from "./UserMenu.tsx";
 
 const Header: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { isAuthenticated, isClubAdmin, isRegularUser } = useUserRoles();
+  const { user } = useAuth();
+
+  const navLinks = [
+    { show: true, label: 'Canchas', to: '/courts' },
+    { show: isRegularUser, label: 'Mis Reservas', to: '/my-reservations' },
+    { show: isClubAdmin, label: 'Panel del Club', to: '/club/dashboard' }
+  ].filter(link => link.show);
 
   return (
     <header className="fixed top-0 left-0 w-full z-50 px-4">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between
-                  bg-gradient-to-r from-green-700/90 via-emerald-600/90 to-teal-600/90
-                  backdrop-blur-xl rounded-2xl mt-4 shadow-2xl
-                  border border-white/20 hover:border-white/30 transition-all duration-300">
+      <div
+        className="max-w-7xl mx-auto mt-4 px-6 py-4
+        flex items-center justify-between
+        bg-gradient-to-r from-green-700/90 via-emerald-600/90 to-teal-600/90
+        backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20"
+      >
+        {/* LOGO */}
+        <Link to="/" className="flex items-center gap-3 text-white">
+          <span className="text-3xl">🏸</span>
+          <span className="text-2xl font-black tracking-tight">Reservas</span>
+        </Link>
 
-        {/* Logo */}
-        <div className="text-2xl font-black text-white flex items-center gap-3">
-          <span className="text-3xl animate-bounce">🏸</span>
-          <span className="tracking-tight drop-shadow-lg">Reservas</span>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex items-center gap-6 text-white font-semibold">
-          {user ? (
-            <>
-              <a
-                href="/reservations"
-                className="text-white hover:text-emerald-200 transition-all duration-200 hover:scale-105"
+        {/* NAV (solo si hay más de un link) */}
+        {navLinks.length > 1 && (
+          <nav className="hidden md:flex gap-6 font-medium">
+            {navLinks.map(link => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className="text-white hover:text-emerald-200 transition"
               >
-                Mis Reservas
-              </a>
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        )}
 
-              <a
-                href="/profile"
-                className="text-white hover:text-emerald-200 transition-all duration-200 hover:scale-105"
-              >
-                Perfil
-              </a>
-
-              {user.role === 'ADMIN' && (
-                <a
-                  href="/admin"
-                  className="text-white hover:text-emerald-200 transition-all duration-200 hover:scale-105"
-                >
-                  Admin
-                </a>
-              )}
-
-              <button
-                onClick={logout}
-                className="bg-white/20 hover:bg-white/30 text-white border border-white/40
-                     px-5 py-2.5 rounded-xl transition-all duration-200
-                     backdrop-blur-sm shadow-lg hover:shadow-xl hover:scale-105
-                     hover:border-white/60 font-medium"
-              >
-                Cerrar Sesión
-              </button>
-            </>
+        {/* USER AREA */}
+        <div className="flex items-center gap-4">
+          {isAuthenticated && user ? (
+            <UserMenu
+              user={user}
+              navLinks={navLinks}
+            />
           ) : (
             <>
-              <a
-                href="/login"
-                className="text-white hover:text-emerald-200 transition-all duration-200 hover:scale-105"
+              <Link
+                to="/login"
+                className="text-white hover:text-emerald-200 transition"
               >
-                Iniciar Sesión
-              </a>
+                Iniciar sesión
+              </Link>
 
-              <a
-                href="/register"
-                className="bg-white text-green-700 hover:bg-emerald-50 hover:text-green-800
-                     font-bold px-5 py-2.5 rounded-xl transition-all duration-200
-                     shadow-lg hover:shadow-xl hover:scale-105 border border-white/30"
+              <Link
+                to="/register"
+                className="bg-white text-green-700 font-bold
+                px-4 py-2 rounded-xl hover:bg-emerald-50 transition shadow"
               >
                 Registrarse
-              </a>
+              </Link>
             </>
           )}
-        </nav>
+        </div>
       </div>
     </header>
   );

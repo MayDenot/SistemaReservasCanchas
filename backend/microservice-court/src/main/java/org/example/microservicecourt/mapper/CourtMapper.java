@@ -3,10 +3,10 @@ package org.example.microservicecourt.mapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.common.dto.CourtResponseDTO;
 import org.example.microservicecourt.entity.Court;
 import org.example.microservicecourt.feignClient.ClubClient;
 import org.example.microservicecourt.service.dto.request.CourtRequestDTO;
-import org.example.microservicecourt.service.dto.response.CourtResponseDTO;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -31,6 +31,7 @@ public class CourtMapper {
             .type(dto.getType())
             .pricePerHour(dto.getPricePerHour())
             .isActive(dto.getIsActive() != null ? dto.getIsActive() : true)
+            .description(dto.getDescription())
             .build();
   }
 
@@ -46,6 +47,7 @@ public class CourtMapper {
             .type(court.getType())
             .pricePerHour(court.getPricePerHour())
             .isActive(court.getIsActive())
+            .description(court.getDescription())
             .clubName(getClubName(court.getClubId()))
             .build();
   }

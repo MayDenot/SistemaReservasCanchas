@@ -7,8 +7,13 @@ import org.example.microserviceuser.mapper.UserMapper;
 import org.example.microserviceuser.service.UserService;
 import org.example.microserviceuser.service.dto.request.UserRequestDTO;
 import org.example.microserviceuser.service.dto.response.UserResponseDTO;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @RestController
@@ -82,25 +87,59 @@ public class UserController {
   }
 
   @GetMapping("/email/{email}")
-  public ResponseEntity<UserResponseDTO> findByEmail(
-          @PathVariable String email,
-          @RequestHeader(value = "Authorization", required = false) String authHeader,
-          @RequestHeader(value = "X-User-Email", required = false) String xUserEmail) {
-
-    log.info("Finding user by email: {}", email);
-    log.info("Headers - Authorization: {}, X-User-Email: {}",
-            authHeader != null ? "Present" : "Missing",
-            xUserEmail);
+  public ResponseEntity<?> findByEmail(@PathVariable String email) {
+    log.info("=== ENDPOINT: /api/users/email/{} ===", email);
 
     try {
-      User user = userService.findByEmail(email);
-      return ResponseEntity.ok(UserMapper.toResponse(user));
+      // Decodificar el email del path variable
+      String decodedEmail = URLDecoder.decode(email, StandardCharsets.UTF_8.name());
+      log.info("Email decodificado del path: '{}'", decodedEmail);
+
+      User user = userService.findByEmail(decodedEmail);
+
+      log.info("✅ Usuario encontrado - ID: {}, Email: '{}'",
+              user.getId(), user.getEmail());
+
+      UserResponseDTO response = UserMapper.toResponse(user);
+      log.info("Response DTO: {}", response);
+
+      return ResponseEntity.ok(response);
+
+    } catch (IllegalArgumentException e) {
+      log.error("Error decodificando email: {}", email, e);
+      return ResponseEntity.badRequest().build();
     } catch (RuntimeException e) {
-      log.error("User not found with email: {}", email);
+      log.error("Usuario no encontrado: '{}' - Error: {}", email, e.getMessage());
       return ResponseEntity.notFound().build();
     } catch (Exception e) {
-      log.error("Error finding user by email: {}", email, e);
-      return ResponseEntity.badRequest().build();
+      log.error("Error inesperado en findByEmail: ", e);
+      return ResponseEntity.internalServerError().build();
+    }
+  }
+
+  @GetMapping("/by-email/{email}")
+  public ResponseEntity<?> getUserIdByEmail(@PathVariable String email) {
+    try {
+      User user = userService.findByEmail(email);
+      return ResponseEntity.ok(user.getId());
+    } catch (Exception e) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+  }
+
+  @GetMapping("/first-club-admin")
+  public ResponseEntity<?> getFirstClubAdmin() {
+    log.info("Buscando primer usuario CLUB_ADMIN");
+
+    try {
+      User clubAdmin = userService.findFirstClubAdmin();
+      return ResponseEntity.ok(UserMapper.toResponse(clubAdmin));
+    } catch (RuntimeException e) {
+      log.error("No se encontró ningún CLUB_ADMIN: {}", e.getMessage());
+      return ResponseEntity.notFound().build();
+    } catch (Exception e) {
+      log.error("Error buscando CLUB_ADMIN: ", e);
+      return ResponseEntity.internalServerError().build();
     }
   }
 }

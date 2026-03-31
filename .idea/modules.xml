@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/SistemaReservas.iml" filepath="$PROJECT_DIR$/.idea/SistemaReservas.iml" />
+      <module fileurl="file://$PROJECT_DIR$/SistemaReservasCanchas/microservice-reservation/microservice-reservation.iml" filepath="$PROJECT_DIR$/SistemaReservasCanchas/microservice-reservation/microservice-reservation.iml" />
     </modules>
   </component>
 </project>

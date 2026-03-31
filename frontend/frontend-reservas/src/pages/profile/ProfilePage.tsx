@@ -101,14 +101,14 @@ const ProfilePage: React.FC = () => {
   };
 
   const getUserRole = () => {
-    return user?.role || 'USER';
+    return user?.userRole || 'USER';
   };
 
   const getRoleDisplayName = (role: string) => {
     const roles: Record<string, string> = {
       'USER': 'Usuario',
-      'ADMIN': 'Administrador',
-      'CLUB_OWNER': 'Dueño de Club'
+      'CLUB_ADMIN': 'Administrador',
+      'SUPER_ADMIN': 'Dueño de Club'
     };
     return roles[role] || role;
   };
@@ -372,8 +372,8 @@ const ProfilePage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
                 { icon: 'event', title: 'Mis Reservas', desc: 'Ver y gestionar todas tus reservas', onClick: () => window.location.href = '/reservations' },
-                ...(userRole === 'CLUB_OWNER' ? [{ icon: 'business', title: 'Mis Clubes', desc: 'Gestionar clubes y canchas', onClick: () => window.location.href = '/clubs' }] : []),
-                ...(userRole === 'ADMIN' ? [{ icon: 'dashboard', title: 'Panel de Administración', desc: 'Acceder al panel de control', onClick: () => window.location.href = '/admin' }] : []),
+                ...(userRole === 'SUPER_ADMIN' ? [{ icon: 'business', title: 'Mis Clubes', desc: 'Gestionar clubes y canchas', onClick: () => window.location.href = '/clubs' }] : []),
+                ...(userRole === 'CLUB_ADMIN' ? [{ icon: 'dashboard', title: 'Panel de Administración', desc: 'Acceder al panel de control', onClick: () => window.location.href = '/admin' }] : []),
                 { icon: 'logout', title: 'Cerrar Sesión', desc: 'Salir de tu cuenta', onClick: logout }
               ].map((action, index) => (
                 <button

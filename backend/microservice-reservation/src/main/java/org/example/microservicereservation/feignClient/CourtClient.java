@@ -12,16 +12,23 @@ import java.util.List;
 @FeignClient(name = "microservice-court", url = "http://court-service:8080")
 public interface CourtClient {
   // Obtener cancha por ID
-  @GetMapping("/{id}")
+  @GetMapping("/api/courts/{id}")
   CourtDTO findById(@PathVariable("id") Long id);
 
   // Verificar si una cancha existe
-  @GetMapping("/{id}/exists")
+  @GetMapping("/api/courts/{id}/exists")
   boolean courtExists(@PathVariable("id") Long id);
 
   // Verificar disponibilidad de una cancha
-  @GetMapping("/{courtId}/check-availability")
+  @GetMapping("/api/courts/{courtId}/check-availability")
   boolean isCourtAvailable(@PathVariable("courtId") Long courtId,
                            @RequestParam("startTime") LocalDateTime startTime,
                            @RequestParam("endTime") LocalDateTime endTime);
+
+
+  @GetMapping("/api/courts/club/{clubId}")
+  List<CourtDTO> findByClubId(@PathVariable Long clubId);
+
+  @GetMapping("/api/courts/batch")
+  List<CourtDTO> getCourtsByIds(@RequestParam List<Long> ids);
 }

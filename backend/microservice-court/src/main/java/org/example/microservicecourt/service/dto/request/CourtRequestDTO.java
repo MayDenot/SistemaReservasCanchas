@@ -1,7 +1,7 @@
 package org.example.microservicecourt.service.dto.request;
 
 import lombok.*;
-import org.example.microservicecourt.entity.CourtType;
+import org.example.common.dto.CourtType;
 
 import java.math.BigDecimal;
 
@@ -16,4 +16,5 @@ public class CourtRequestDTO {
   private CourtType type;
   private BigDecimal pricePerHour;
   private Boolean isActive;
+  private String description;
 }

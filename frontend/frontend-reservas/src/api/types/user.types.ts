@@ -3,7 +3,7 @@ export interface User {
     email: string;
     name: string;
     phone?: string;
-    role: 'USER' | 'ADMIN' | 'CLUB_OWNER';
+    userRole: 'USER' | 'CLUB_ADMIN' | 'SUPER_ADMIN';
     createdAt: string;
     updatedAt: string;
 }
@@ -11,7 +11,7 @@ export interface User {
 export interface UserRequest {
     email: string;
     password: string;
-    userRole: 'USER' | 'ADMIN' | 'CLUB_OWNER';
+    userRole: 'USER' | 'CLUB_ADMIN' | 'SUPER_ADMIN';
     name: string;
     phone: string;
     createdAt: string;
@@ -20,7 +20,7 @@ export interface UserRequest {
 export interface UserResponse {
     id: bigint;
     email: string;
-    userRole: 'USER' | 'ADMIN' | 'CLUB_OWNER';
+    userRole: 'USER' | 'CLUB_ADMIN' | 'SUPER_ADMIN';
     name: string;
     phone: string;
     createdAt: string;
