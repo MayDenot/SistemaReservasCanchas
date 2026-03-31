@@ -8,6 +8,10 @@
   filter: drop-shadow(0 0 2em rgba(16, 185, 129, 0.6));
 }
 
+#avatar-profile:hover .avatar-overlay {
+  opacity: 1;
+}
+
 /* Media queries para responsividad */
 @media (max-width: 768px) {
   h1 {

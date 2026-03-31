@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { ProfileRequest, ProfileResponse } from "../../api/types/user.types.ts";
 import { useAuth } from "../../context/AuthContext.tsx";
+import { FiEdit2 } from "react-icons/fi";
 
 const ProfilePage: React.FC = () => {
   const { user, logout } = useAuth();
@@ -16,6 +17,10 @@ const ProfilePage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const avatarUserRef = useRef<HTMLImageElement>(null);
+  const symbolRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (user) {
@@ -38,6 +43,24 @@ const ProfilePage: React.FC = () => {
       setLoading(false);
     }
   }, [user]);
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if(!file) return;
+
+    const img = avatarUserRef.current;
+    if (!img) return;
+
+    if (!symbolRef.current) return;
+
+    img.src = URL.createObjectURL(file);
+    img.style.display = "block";
+    symbolRef.current.style.display = "none";
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -163,8 +186,32 @@ const ProfilePage: React.FC = () => {
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8 mb-12 pb-12 border-b border-gray-100">
             <div className="flex items-start gap-8">
               <div className="relative group">
-                <div className="w-32 h-32 bg-gradient-sport rounded-full flex items-center justify-center text-4xl text-white font-bold shadow-2xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                  {profile.name ? profile.name.charAt(0).toUpperCase() : 'U'}
+                <div 
+                  id="avatar-profile" 
+                  className="w-32 h-32 bg-gradient-sport rounded-full flex items-center justify-center text-4xl text-white font-bold shadow-2xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500"
+                  onClick={handleAvatarClick}
+                >
+                  <span ref={symbolRef} className="avatar-symbol">
+                    {profile.name ? profile.name.charAt(0).toUpperCase() : 'U'}
+                  </span>
+                  <img 
+                    ref={avatarUserRef}
+                    className="avatar-img w-ful h-full object-cover absolute inset-0 rounded-full"
+                    alt='avatar'
+                    style={{display: "none" }}
+                  />
+                  <div 
+                    className="avatar-overlay absolute inset-0 rounded-full flex items-center justify-center text-[1.5rem] opacity-0 transition-opacity duration-200 ease-in-out bg-black/70 text-white"
+                  >
+                    <FiEdit2 />
+                  </div>
+                  <input 
+                    type="file"
+                    accept='image/*'
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    style={{display: "none"}}
+                  />
                 </div>
               </div>
               <div>

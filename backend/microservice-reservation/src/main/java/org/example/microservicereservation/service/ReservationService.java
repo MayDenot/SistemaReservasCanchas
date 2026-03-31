@@ -1,5 +1,6 @@
 package org.example.microservicereservation.service;
 
+import org.springframework.data.domain.PageRequest;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -450,7 +451,7 @@ public class ReservationService {
   }
 
   public List<ReservationResponseDTO> getRecentReservationsByClub(Long clubId, int limit) {
-    List<Reservation> reservations = reservationRepository.findRecentByClubId(clubId, limit);
+    List<Reservation> reservations = reservationRepository.findRecentByClubId(clubId, PageRequest.of(0, limit));
 
     // Aplicar límite
     List<Reservation> limitedReservations = reservations.stream()

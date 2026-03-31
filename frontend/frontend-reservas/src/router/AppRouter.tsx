@@ -8,8 +8,8 @@ import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
 import RegisterUserPage from '../pages/auth/RegisterUserPage';
 import RegisterClubAdminPage from '../pages/auth/RegisterClubAdminPage';
-import BecomeClubAdminPage from '../pages/auth/BecomeClubAdminPage'; // Nueva
-import CreateClubPage from '../pages/clubs/CreateClubPage'; // Nueva
+import BecomeClubAdminPage from '../pages/auth/BecomeClubAdminPage';
+import CreateClubPage from '../pages/clubs/CreateClubPage';
 import HomePage from '../pages/public/HomePage';
 import CourtsPage from '../pages/courts/CourtsPage';
 import CourtDetailPage from '../pages/courts/CourtDetailPage';
@@ -22,6 +22,7 @@ import ClubDashboardPage from "../pages/clubs/ClubDashboardPage";
 import UnauthorizedPage from "../pages/errors/UnauthorizedPage";
 import NotFoundPage from "../pages/errors/NotFoundPage";
 import RoleBasedRoute from "../components/auth/RoleBasedRoute.tsx";
+// import MyReservationsPage from "../reservations/MyReservationsPage";
 
 const AppRouter: React.FC = () => {
   return (
@@ -70,6 +71,12 @@ const AppRouter: React.FC = () => {
           <ReservationDetailPage />
         </PrivateRoute>
       } />
+
+      {/* <Route path="/my-reservations" element={
+        <PrivateRoute>
+          <MyReservationsPage />
+        </PrivateRoute>
+      } /> */}
 
       {/* Rutas protegidas por roles específicos */}
       {/* Solo SUPER_ADMIN */}

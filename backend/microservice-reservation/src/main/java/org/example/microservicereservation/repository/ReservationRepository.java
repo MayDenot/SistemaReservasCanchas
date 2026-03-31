@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.repository.query.Param;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,10 +38,9 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                                  @Param("endDateTime") LocalDateTime endDateTime,
                                  @Param("courtId") Long courtId);
 
-  @Query("SELECT r FROM Reservation r WHERE r.clubId = :clubId " +
-          "ORDER BY r.createdAt DESC")
-  List<Reservation> findRecentByClubId(@Param("clubId") Long clubId,
-                                       @RequestParam(defaultValue = "10") int limit);
+
+  @Query("SELECT r FROM Reservation r WHERE r.clubId = :clubId ORDER BY r.createdAt DESC")
+  List<Reservation> findRecentByClubId(@Param("clubId") Long clubId, Pageable pageable);
 
   @Query("SELECT COALESCE(SUM(r.totalAmount), 0.0) FROM Reservation r " +
           "WHERE r.clubId = :clubId " +
